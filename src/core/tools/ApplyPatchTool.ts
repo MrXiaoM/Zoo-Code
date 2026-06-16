@@ -65,10 +65,23 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 				return
 			}
 
+			// Check EOL normalization configuration
+			const provider = task.providerRef.deref()
+			const state = await provider?.getState()
+			const isNormalizeLineEndingsEnabled = experiments.isEnabled(
+				state?.experiments ?? {},
+				EXPERIMENT_IDS.NORMALIZE_LINE_ENDINGS,
+			)
+
+			let preparedPatch = patch
+			if (isNormalizeLineEndingsEnabled) {
+				preparedPatch = patch.replace(/\r\n/g, "\n")
+			}
+
 			// Parse the patch
 			let parsedPatch
 			try {
-				parsedPatch = parsePatch(patch)
+				parsedPatch = parsePatch(preparedPatch)
 			} catch (error) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("apply_patch")
@@ -88,7 +101,11 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			// Process each hunk
 			const readFile = async (filePath: string): Promise<string> => {
 				const absolutePath = path.resolve(task.cwd, filePath)
-				return await fs.readFile(absolutePath, "utf8")
+				const content = await fs.readFile(absolutePath, "utf8")
+				if (isNormalizeLineEndingsEnabled) {
+					return content.replace(/\r\n/g, "\n")
+				}
+				return content
 			}
 
 			let changes: ApplyPatchFileChange[]
@@ -159,7 +176,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			return
 		}
 
-		const newContent = change.newContent || ""
+		let newContent = change.newContent || ""
 		const isOutsideWorkspace = isPathOutsideWorkspace(absolutePath)
 
 		// Initialize diff view for new file
@@ -177,6 +194,16 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			state?.experiments ?? {},
 			EXPERIMENT_IDS.PREVENT_FOCUS_DISRUPTION,
 		)
+		const isNormalizeLineEndingsEnabled = experiments.isEnabled(
+			state?.experiments ?? {},
+			EXPERIMENT_IDS.NORMALIZE_LINE_ENDINGS,
+		)
+
+		if (isNormalizeLineEndingsEnabled) {
+			// For new files, default to LF or platform EOL. Let's make sure EOL is restored.
+			// The originalContent is empty so the dominant EOL is LF (\n) or system EOL.
+			// Let's keep it LF for newContent as normal since it's already normalized to LF by replacing preparedPatch.
+		}
 
 		const sanitizedDiff = sanitizeUnifiedDiff(diff || "")
 		const diffStats = computeDiffStats(sanitizedDiff) || undefined
@@ -308,21 +335,12 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			return
 		}
 
+		const rawOriginalContent = await fs.readFile(absolutePath, "utf8")
+		const originalEol = rawOriginalContent.includes("\r\n") ? "\r\n" : "\n"
+
 		const originalContent = change.originalContent || ""
-		const newContent = change.newContent || ""
+		let newContent = change.newContent || ""
 		const isOutsideWorkspace = isPathOutsideWorkspace(absolutePath)
-
-		// Initialize diff view
-		task.diffViewProvider.editType = "modify"
-		task.diffViewProvider.originalContent = originalContent
-
-		// Generate and validate diff
-		const diff = formatResponse.createPrettyPatch(relPath, originalContent, newContent)
-		if (!diff) {
-			pushToolResult(`No changes needed for '${relPath}'`)
-			await task.diffViewProvider.reset()
-			return
-		}
 
 		// Check experiment settings
 		const provider = task.providerRef.deref()
@@ -333,6 +351,27 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			state?.experiments ?? {},
 			EXPERIMENT_IDS.PREVENT_FOCUS_DISRUPTION,
 		)
+		const isNormalizeLineEndingsEnabled = experiments.isEnabled(
+			state?.experiments ?? {},
+			EXPERIMENT_IDS.NORMALIZE_LINE_ENDINGS,
+		)
+
+		if (isNormalizeLineEndingsEnabled) {
+			// Restore dominant line endings to the new content
+			newContent = newContent.replace(/\r?\n/g, originalEol)
+		}
+
+		// Initialize diff view
+		task.diffViewProvider.editType = "modify"
+		task.diffViewProvider.originalContent = rawOriginalContent
+
+		// Generate and validate diff
+		const diff = formatResponse.createPrettyPatch(relPath, rawOriginalContent, newContent)
+		if (!diff) {
+			pushToolResult(`No changes needed for '${relPath}'`)
+			await task.diffViewProvider.reset()
+			return
+		}
 
 		const sanitizedDiff = sanitizeUnifiedDiff(diff)
 		const diffStats = computeDiffStats(sanitizedDiff) || undefined
@@ -341,7 +380,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			tool: "appliedDiff",
 			path: getReadablePath(task.cwd, relPath),
 			diff: sanitizedDiff,
-			originalContent,
+			originalContent: rawOriginalContent,
 			isOutsideWorkspace,
 		}
 

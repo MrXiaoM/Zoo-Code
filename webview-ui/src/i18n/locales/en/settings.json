@@ -913,6 +913,10 @@
 			"refreshSuccess": "Tools refreshed successfully",
 			"refreshError": "Failed to refresh tools",
 			"toolParameters": "Parameters"
+		},
+		"NORMALIZE_LINE_ENDINGS": {
+			"name": "Normalize line endings",
+			"description": "Automatically unify line endings (LF/CRLF) to prevent matching failures caused by mixed or mismatched EOL, and restore the original file's dominant EOL when saving."
 		}
 	},
 	"promptCaching": {

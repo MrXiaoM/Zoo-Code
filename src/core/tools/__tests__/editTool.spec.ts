@@ -8,6 +8,7 @@ import { isPathOutsideWorkspace } from "../../../utils/pathUtils"
 import { getReadablePath } from "../../../utils/path"
 import { ToolUse, ToolResponse, AskApproval, HandleError, PushToolResult } from "../../../shared/tools"
 import { editTool } from "../EditTool"
+import { EXPERIMENT_IDS } from "../../../shared/experiments"
 
 vi.mock("fs/promises", () => ({
 	default: {
@@ -420,6 +421,70 @@ describe("editTool", () => {
 			await executeEditTool()
 
 			expect(mockTask.fileContextTracker.trackFileContext).toHaveBeenCalledWith(testFilePath, "roo_edited")
+		})
+	})
+
+	describe("CRLF normalization", () => {
+		it("restores CRLF when experimental setting is enabled", async () => {
+			// Mock state with normalizeLineEndings enabled
+			mockTask.providerRef.deref.mockReturnValue({
+				getState: vi.fn().mockResolvedValue({
+					experiments: { [EXPERIMENT_IDS.NORMALIZE_LINE_ENDINGS]: true },
+				}),
+			})
+
+			const contentWithCRLF = "Line 1\r\nLine 2\r\nLine 3"
+
+			await executeEditTool(
+				{ old_string: "Line 2", new_string: "Modified Line 2" },
+				{ fileContent: contentWithCRLF },
+			)
+
+			// verify that the new content passed to diffViewProvider has CRLF
+			const expectedContent = "Line 1\r\nModified Line 2\r\nLine 3"
+			expect(mockTask.diffViewProvider.update).toHaveBeenCalledWith(expectedContent, true)
+		})
+
+		it("restores CRLF for multiline replacements when experimental setting is enabled", async () => {
+			// Mock state with normalizeLineEndings enabled
+			mockTask.providerRef.deref.mockReturnValue({
+				getState: vi.fn().mockResolvedValue({
+					experiments: { [EXPERIMENT_IDS.NORMALIZE_LINE_ENDINGS]: true },
+				}),
+			})
+
+			const contentWithCRLF = "Line 1\r\nLine 2\r\nLine 3\r\nLine 4"
+			const multilineOld = "Line 2\nLine 3" // Model sends LF
+			const multilineNew = "Modified 2\nModified 3"
+
+			await executeEditTool(
+				{ old_string: multilineOld, new_string: multilineNew },
+				{ fileContent: contentWithCRLF },
+			)
+
+			// verify that the new content passed to diffViewProvider has CRLF
+			const expectedContent = "Line 1\r\nModified 2\r\nModified 3\r\nLine 4"
+			expect(mockTask.diffViewProvider.update).toHaveBeenCalledWith(expectedContent, true)
+		})
+
+		it("keeps LF when experimental setting is disabled even if file had CRLF", async () => {
+			// Mock state with normalizeLineEndings disabled (default)
+			mockTask.providerRef.deref.mockReturnValue({
+				getState: vi.fn().mockResolvedValue({
+					experiments: { [EXPERIMENT_IDS.NORMALIZE_LINE_ENDINGS]: false },
+				}),
+			})
+
+			const contentWithCRLF = "Line 1\r\nLine 2\r\nLine 3"
+
+			await executeEditTool(
+				{ old_string: "Line 2", new_string: "Modified Line 2" },
+				{ fileContent: contentWithCRLF },
+			)
+
+			// verify that the new content passed to diffViewProvider has LF (due to normalization without restoration)
+			const expectedContent = "Line 1\nModified Line 2\nLine 3"
+			expect(mockTask.diffViewProvider.update).toHaveBeenCalledWith(expectedContent, true)
 		})
 	})
 })

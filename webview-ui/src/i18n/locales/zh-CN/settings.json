@@ -161,7 +161,7 @@
 		"unsavedSettingsMessage": "请先保存设置再开始索引过程。",
 		"clearDataDialog": {
 			"title": "确定要继续吗？",
-			"description": "此操作无法撤消。这将永久删除您的代码库索引数据。",
+			"description": "此操作无法撤销。这将永久删除您的代码库索引数据。",
 			"cancelButton": "取消",
 			"confirmButton": "清除数据"
 		},
@@ -475,7 +475,7 @@
 			"apiKey": "Ollama API 密钥",
 			"apiKeyHelp": "用于已认证 Ollama 实例或云服务的可选 API 密钥。本地安装请留空。",
 			"numCtx": "上下文窗口大小 (num_ctx)",
-			"numCtxHelp": "覆盖模型的默认上下文窗口大小。留空以使用模型的 Modelfile 配置。最小值为 128。",
+			"numCtxHelp": "覆盖模型的默认上下文窗口大小。留空以使用模型的 Modelfile配置。最小值为 128。",
 			"description": "Ollama 允许您在本地计算机上运行模型。有关如何开始使用的说明，请参阅其快速入门指南。",
 			"warning": "注意：Zoo Code 使用复杂的提示，与 Claude 模型配合最佳。功能较弱的模型可能无法按预期工作。"
 		},
@@ -845,6 +845,10 @@
 			"refreshSuccess": "工具刷新成功",
 			"refreshError": "工具刷新失败",
 			"toolParameters": "参数"
+		},
+		"NORMALIZE_LINE_ENDINGS": {
+			"name": "自动统一换行符",
+			"description": "文件编辑时，自动统一换行符（LF/CRLF），避免因为换行符混合或不匹配导致匹配失败，并在保存时还原回文件原本的主导换行符。"
 		}
 	},
 	"promptCaching": {

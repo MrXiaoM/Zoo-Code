@@ -88,8 +88,14 @@ export class EditTool extends BaseTool<"edit"> {
 			}
 
 			let fileContent: string
+			let originalEOL: string | undefined
 			try {
 				fileContent = await fs.readFile(absolutePath, "utf8")
+
+				// Detect line ending
+				const hasCRLF = fileContent.includes("\r\n")
+				originalEOL = hasCRLF ? "\r\n" : "\n"
+
 				// Normalize line endings to LF for consistent matching
 				fileContent = fileContent.replace(/\r\n/g, "\n")
 			} catch (error) {
@@ -142,6 +148,19 @@ export class EditTool extends BaseTool<"edit"> {
 				newContent = fileContent.replace(normalizedOld, () => normalizedNew)
 			}
 
+			// Get experimental settings
+			const provider = task.providerRef.deref()
+			const state = await provider?.getState()
+			const isNormalizeLineEndingsEnabled = experiments.isEnabled(
+				state?.experiments ?? {},
+				EXPERIMENT_IDS.NORMALIZE_LINE_ENDINGS,
+			)
+
+			// Restore line endings if experimental setting is enabled
+			if (isNormalizeLineEndingsEnabled && originalEOL === "\r\n") {
+				newContent = newContent.replace(/\n/g, "\r\n")
+			}
+
 			// Check if any changes were made
 			if (newContent === fileContent) {
 				pushToolResult(`No changes needed for '${relPath}'`)
@@ -163,8 +182,6 @@ export class EditTool extends BaseTool<"edit"> {
 			}
 
 			// Check if preventFocusDisruption experiment is enabled
-			const provider = task.providerRef.deref()
-			const state = await provider?.getState()
 			const diagnosticsEnabled = state?.diagnosticsEnabled ?? true
 			const writeDelayMs = state?.writeDelayMs ?? DEFAULT_WRITE_DELAY_MS
 			const isPreventFocusDisruptionEnabled = experiments.isEnabled(

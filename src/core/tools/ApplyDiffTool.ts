@@ -70,14 +70,35 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 
 			const originalContent: string = await fs.readFile(absolutePath, "utf-8")
 
+			// Detect EOL normalization configuration
+			const provider = task.providerRef.deref()
+			const state = await provider?.getState()
+			const isNormalizeLineEndingsEnabled = experiments.isEnabled(
+				state?.experiments ?? {},
+				EXPERIMENT_IDS.NORMALIZE_LINE_ENDINGS,
+			)
+
+			const originalEol = originalContent.includes("\r\n") ? "\r\n" : "\n"
+			let preparedOriginal = originalContent
+			let preparedDiff = diffContent
+
+			if (isNormalizeLineEndingsEnabled) {
+				preparedOriginal = originalContent.replace(/\r\n/g, "\n")
+				preparedDiff = diffContent.replace(/\r\n/g, "\n")
+			}
+
 			// Apply the diff to the original content
 			const diffResult = (await task.diffStrategy?.applyDiff(
-				originalContent,
-				diffContent,
+				preparedOriginal,
+				preparedDiff,
 				parseInt(params.diff.match(/:start_line:(\d+)/)?.[1] ?? ""),
 			)) ?? {
 				success: false,
 				error: "No diff strategy available",
+			}
+
+			if (diffResult.success && isNormalizeLineEndingsEnabled) {
+				diffResult.content = diffResult.content.replace(/\r?\n/g, originalEol)
 			}
 
 			if (!diffResult.success) {
@@ -126,8 +147,6 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 			const diffStats = computeDiffStats(unifiedPatch) || undefined
 
 			// Check if preventFocusDisruption experiment is enabled
-			const provider = task.providerRef.deref()
-			const state = await provider?.getState()
 			const diagnosticsEnabled = state?.diagnosticsEnabled ?? true
 			const writeDelayMs = state?.writeDelayMs ?? DEFAULT_WRITE_DELAY_MS
 			const isPreventFocusDisruptionEnabled = experiments.isEnabled(
