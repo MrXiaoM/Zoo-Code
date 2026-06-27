@@ -374,6 +374,24 @@
 		"anthropicUseAuthToken": "将 Anthropic API 密钥作为 Authorization 标头传递，而不是 X-Api-Key",
 		"anthropic1MContextBetaLabel": "启用 1M 上下文窗口 (Beta)",
 		"anthropic1MContextBetaDescription": "为 Claude Sonnet 4.x / Claude Opus 4.6 将上下文窗口扩展至 100 万个 token",
+		"anthropicCustomModel": {
+			"description": "覆盖上下文窗口大小和价格。适用于这些值与 Anthropic 官方默认值不同的非官方或自托管端点。留空则使用模型的默认值。",
+			"contextWindow": {
+				"label": "上下文窗口大小"
+			},
+			"inputPrice": {
+				"label": "输入价格（每百万 token）"
+			},
+			"outputPrice": {
+				"label": "输出价格（每百万 token）"
+			},
+			"cacheWritesPrice": {
+				"label": "缓存写入价格（每百万 token）"
+			},
+			"cacheReadsPrice": {
+				"label": "缓存读取价格（每百万 token）"
+			}
+		},
 		"awsBedrock1MContextBetaLabel": "启用 1M 上下文窗口 (Beta)",
 		"awsBedrock1MContextBetaDescription": "为 Claude Sonnet 4.x / Claude Opus 4.6 将上下文窗口扩展至 100 万个 token",
 		"vertex1MContextBetaLabel": "启用 1M 上下文窗口 (Beta)",

@@ -377,6 +377,43 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 			}
 		}
 
+		// Apply user-provided overrides for context window and pricing. These are
+		// primarily intended for unofficial/self-hosted endpoints (custom base URL)
+		// where these values can differ from the official Anthropic defaults.
+		// Applied last so that user overrides take precedence over the 1M context
+		// tier values above. Only valid (finite) numbers override the defaults;
+		// leaving a field undefined keeps the model's built-in value.
+		const {
+			anthropicCustomContextWindow,
+			anthropicCustomInputPrice,
+			anthropicCustomOutputPrice,
+			anthropicCustomCacheWritesPrice,
+			anthropicCustomCacheReadsPrice,
+		} = this.options
+
+		const isValidNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value)
+
+		if (
+			isValidNumber(anthropicCustomContextWindow) ||
+			isValidNumber(anthropicCustomInputPrice) ||
+			isValidNumber(anthropicCustomOutputPrice) ||
+			isValidNumber(anthropicCustomCacheWritesPrice) ||
+			isValidNumber(anthropicCustomCacheReadsPrice)
+		) {
+			info = {
+				...info,
+				...(isValidNumber(anthropicCustomContextWindow) ? { contextWindow: anthropicCustomContextWindow } : {}),
+				...(isValidNumber(anthropicCustomInputPrice) ? { inputPrice: anthropicCustomInputPrice } : {}),
+				...(isValidNumber(anthropicCustomOutputPrice) ? { outputPrice: anthropicCustomOutputPrice } : {}),
+				...(isValidNumber(anthropicCustomCacheWritesPrice)
+					? { cacheWritesPrice: anthropicCustomCacheWritesPrice }
+					: {}),
+				...(isValidNumber(anthropicCustomCacheReadsPrice)
+					? { cacheReadsPrice: anthropicCustomCacheReadsPrice }
+					: {}),
+			}
+		}
+
 		const params = getModelParams({
 			format: "anthropic",
 			modelId: id,

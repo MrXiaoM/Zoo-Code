@@ -16,6 +16,33 @@ type AnthropicProps = {
 	simplifySettings?: boolean
 }
 
+// Convert an optional numeric setting to a string for the text input,
+// rendering empty string when the value is unset.
+const numberToInputValue = (value: number | undefined | null): string =>
+	value === undefined || value === null ? "" : value.toString()
+
+// Parse an integer from the input event. Empty/invalid input maps to
+// `undefined` so that the override is cleared and the model default is used.
+const parseIntFieldTransform = (event: Event | React.FormEvent<HTMLElement>): number | undefined => {
+	const value = (event.target as HTMLInputElement).value
+	if (value.trim() === "") {
+		return undefined
+	}
+	const parsed = parseInt(value, 10)
+	return Number.isFinite(parsed) ? parsed : undefined
+}
+
+// Parse a float from the input event. Empty/invalid input maps to
+// `undefined` so that the override is cleared and the model default is used.
+const parseFloatFieldTransform = (event: Event | React.FormEvent<HTMLElement>): number | undefined => {
+	const value = (event.target as HTMLInputElement).value
+	if (value.trim() === "") {
+		return undefined
+	}
+	const parsed = parseFloat(value)
+	return Number.isFinite(parsed) ? parsed : undefined
+}
+
 export const Anthropic = ({ apiConfiguration, setApiConfigurationField }: AnthropicProps) => {
 	const { t } = useAppTranslation()
 	const selectedModel = useSelectedModel(apiConfiguration)
@@ -86,6 +113,84 @@ export const Anthropic = ({ apiConfiguration, setApiConfigurationField }: Anthro
 							className="w-full mt-1">
 							{t("settings:providers.anthropicUseAuthToken")}
 						</Checkbox>
+
+						{/* Custom model overrides for unofficial/self-hosted endpoints. */}
+						<div className="mt-3 flex flex-col gap-3">
+							<div className="text-sm text-vscode-descriptionForeground">
+								{t("settings:providers.anthropicCustomModel.description")}
+							</div>
+
+							<div>
+								<VSCodeTextField
+									value={numberToInputValue(apiConfiguration?.anthropicCustomContextWindow)}
+									type="text"
+									onInput={handleInputChange("anthropicCustomContextWindow", parseIntFieldTransform)}
+									placeholder={t("settings:placeholders.numbers.contextWindow")}
+									className="w-full">
+									<label className="block font-medium mb-1">
+										{t("settings:providers.anthropicCustomModel.contextWindow.label")}
+									</label>
+								</VSCodeTextField>
+							</div>
+
+							<div>
+								<VSCodeTextField
+									value={numberToInputValue(apiConfiguration?.anthropicCustomInputPrice)}
+									type="text"
+									onInput={handleInputChange("anthropicCustomInputPrice", parseFloatFieldTransform)}
+									placeholder={t("settings:placeholders.numbers.inputPrice")}
+									className="w-full">
+									<label className="block font-medium mb-1">
+										{t("settings:providers.anthropicCustomModel.inputPrice.label")}
+									</label>
+								</VSCodeTextField>
+							</div>
+
+							<div>
+								<VSCodeTextField
+									value={numberToInputValue(apiConfiguration?.anthropicCustomOutputPrice)}
+									type="text"
+									onInput={handleInputChange("anthropicCustomOutputPrice", parseFloatFieldTransform)}
+									placeholder={t("settings:placeholders.numbers.outputPrice")}
+									className="w-full">
+									<label className="block font-medium mb-1">
+										{t("settings:providers.anthropicCustomModel.outputPrice.label")}
+									</label>
+								</VSCodeTextField>
+							</div>
+
+							<div>
+								<VSCodeTextField
+									value={numberToInputValue(apiConfiguration?.anthropicCustomCacheWritesPrice)}
+									type="text"
+									onInput={handleInputChange(
+										"anthropicCustomCacheWritesPrice",
+										parseFloatFieldTransform,
+									)}
+									placeholder={t("settings:placeholders.numbers.cacheWritePrice")}
+									className="w-full">
+									<label className="block font-medium mb-1">
+										{t("settings:providers.anthropicCustomModel.cacheWritesPrice.label")}
+									</label>
+								</VSCodeTextField>
+							</div>
+
+							<div>
+								<VSCodeTextField
+									value={numberToInputValue(apiConfiguration?.anthropicCustomCacheReadsPrice)}
+									type="text"
+									onInput={handleInputChange(
+										"anthropicCustomCacheReadsPrice",
+										parseFloatFieldTransform,
+									)}
+									placeholder={t("settings:placeholders.numbers.inputPrice")}
+									className="w-full">
+									<label className="block font-medium mb-1">
+										{t("settings:providers.anthropicCustomModel.cacheReadsPrice.label")}
+									</label>
+								</VSCodeTextField>
+							</div>
+						</div>
 					</>
 				)}
 			</div>

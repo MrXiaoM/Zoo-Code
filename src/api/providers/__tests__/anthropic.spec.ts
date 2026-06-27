@@ -612,6 +612,77 @@ describe("AnthropicHandler", () => {
 			expect(model.info.inputPrice).toBe(6.0)
 			expect(model.info.outputPrice).toBe(22.5)
 		})
+
+		describe("custom context window and pricing overrides", () => {
+			it("overrides context window and pricing when custom values are provided", () => {
+				const handler = new AnthropicHandler({
+					apiKey: "test-api-key",
+					apiModelId: "claude-3-5-sonnet-20241022",
+					anthropicBaseUrl: "https://unofficial.example.com",
+					anthropicCustomContextWindow: 64_000,
+					anthropicCustomInputPrice: 1.5,
+					anthropicCustomOutputPrice: 7.5,
+					anthropicCustomCacheWritesPrice: 2.25,
+					anthropicCustomCacheReadsPrice: 0.3,
+				})
+
+				const model = handler.getModel()
+				expect(model.info.contextWindow).toBe(64_000)
+				expect(model.info.inputPrice).toBe(1.5)
+				expect(model.info.outputPrice).toBe(7.5)
+				expect(model.info.cacheWritesPrice).toBe(2.25)
+				expect(model.info.cacheReadsPrice).toBe(0.3)
+			})
+
+			it("falls back to model defaults when overrides are not provided", () => {
+				const handler = new AnthropicHandler({
+					apiKey: "test-api-key",
+					apiModelId: "claude-3-5-sonnet-20241022",
+				})
+
+				const model = handler.getModel()
+				// These are the built-in defaults for claude-3-5-sonnet-20241022.
+				expect(model.info.contextWindow).toBe(200_000)
+				expect(model.info.maxTokens).toBe(8192)
+			})
+
+			it("only overrides the fields that are provided, leaving others at defaults", () => {
+				const defaultHandler = new AnthropicHandler({
+					apiKey: "test-api-key",
+					apiModelId: "claude-3-5-sonnet-20241022",
+				})
+				const defaultInfo = defaultHandler.getModel().info
+
+				const handler = new AnthropicHandler({
+					apiKey: "test-api-key",
+					apiModelId: "claude-3-5-sonnet-20241022",
+					anthropicCustomContextWindow: 50_000,
+				})
+
+				const model = handler.getModel()
+				expect(model.info.contextWindow).toBe(50_000)
+				// Pricing should remain at the model defaults.
+				expect(model.info.inputPrice).toBe(defaultInfo.inputPrice)
+				expect(model.info.outputPrice).toBe(defaultInfo.outputPrice)
+			})
+
+			it("takes precedence over the 1M context beta tier values", () => {
+				const handler = new AnthropicHandler({
+					apiKey: "test-api-key",
+					apiModelId: "claude-sonnet-4-5",
+					anthropicBeta1MContext: true,
+					anthropicCustomContextWindow: 300_000,
+					anthropicCustomInputPrice: 9.99,
+				})
+
+				const model = handler.getModel()
+				// User override wins over the 1M tier's contextWindow/inputPrice.
+				expect(model.info.contextWindow).toBe(300_000)
+				expect(model.info.inputPrice).toBe(9.99)
+				// Untouched 1M tier value remains.
+				expect(model.info.outputPrice).toBe(22.5)
+			})
+		})
 	})
 
 	describe("reasoning block filtering", () => {

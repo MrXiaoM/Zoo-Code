@@ -442,6 +442,24 @@
 		"anthropicUseAuthToken": "Pass Anthropic API Key as Authorization header instead of X-Api-Key",
 		"anthropic1MContextBetaLabel": "Enable 1M context window (Beta)",
 		"anthropic1MContextBetaDescription": "Extends context window to 1 million tokens for Claude Sonnet 4.x / Claude Opus 4.6",
+		"anthropicCustomModel": {
+			"description": "Override the context window size and pricing. Useful for unofficial or self-hosted endpoints where these values differ from the official Anthropic defaults. Leave a field blank to use the model's default value.",
+			"contextWindow": {
+				"label": "Context Window Size"
+			},
+			"inputPrice": {
+				"label": "Input Price (per 1M tokens)"
+			},
+			"outputPrice": {
+				"label": "Output Price (per 1M tokens)"
+			},
+			"cacheWritesPrice": {
+				"label": "Cache Writes Price (per 1M tokens)"
+			},
+			"cacheReadsPrice": {
+				"label": "Cache Reads Price (per 1M tokens)"
+			}
+		},
 		"awsBedrock1MContextBetaLabel": "Enable 1M context window (Beta)",
 		"awsBedrock1MContextBetaDescription": "Extends context window to 1 million tokens for Claude Sonnet 4.x / Claude Opus 4.6",
 		"vertex1MContextBetaLabel": "Enable 1M context window (Beta)",

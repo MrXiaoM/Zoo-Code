@@ -211,6 +211,15 @@ const anthropicSchema = apiModelIdProviderModelSchema.extend({
 	anthropicBaseUrl: z.string().optional(),
 	anthropicUseAuthToken: z.boolean().optional(),
 	anthropicBeta1MContext: z.boolean().optional(), // Enable 'context-1m-2025-08-07' beta for 1M context window.
+	// Optional per-model overrides primarily intended for unofficial/self-hosted
+	// endpoints (custom base URL) where the context window and pricing differ
+	// from the official Anthropic defaults. When left undefined, the model's
+	// built-in default values are used.
+	anthropicCustomContextWindow: z.number().optional(),
+	anthropicCustomInputPrice: z.number().optional(),
+	anthropicCustomOutputPrice: z.number().optional(),
+	anthropicCustomCacheWritesPrice: z.number().optional(),
+	anthropicCustomCacheReadsPrice: z.number().optional(),
 })
 
 const openRouterSchema = baseProviderSettingsSchema.extend({
