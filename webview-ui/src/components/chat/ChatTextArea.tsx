@@ -31,7 +31,7 @@ import { AutoApproveDropdown } from "./AutoApproveDropdown"
 import { MAX_IMAGES_PER_MESSAGE } from "./ChatView"
 import ContextMenu from "./ContextMenu"
 import { IndexingStatusBadge } from "./IndexingStatusBadge"
-import { ZooCodeAuthBadge } from "./ZooCodeAuthBadge"
+import { IconButton } from "./IconButton"
 import { usePromptHistory } from "./hooks/usePromptHistory"
 
 interface ChatTextAreaProps {
@@ -1343,7 +1343,15 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							</StandardTooltip>
 						)}
 						{!isEditMode ? <IndexingStatusBadge /> : null}
-						{!isEditMode ? <ZooCodeAuthBadge /> : null}
+						{!isEditMode ? (
+							<IconButton
+								iconClass="codicon-settings-gear"
+								title={t("chat:openSettings")}
+								onClick={() =>
+									window.postMessage({ type: "action", action: "settingsButtonClicked" }, "*")
+								}
+							/>
+						) : null}
 					</div>
 				</div>
 			</div>

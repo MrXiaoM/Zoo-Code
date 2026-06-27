@@ -163,6 +163,7 @@
 	"noValidImages": "No valid images were processed",
 	"separator": "Separator",
 	"edit": "Edit...",
+	"openSettings": "Settings",
 	"forNextMode": "for next mode",
 	"forPreviousMode": "for previous mode",
 	"apiRequest": {
