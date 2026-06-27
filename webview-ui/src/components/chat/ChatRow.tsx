@@ -442,11 +442,15 @@ export const ChatRowContent = ({
 				style={{ color: "var(--vscode-foreground)", marginBottom: "-1.5px" }}></span>
 		)
 
-		// A small gray label showing the raw tool name. For recognized tools this
-		// is appended below their rich UI; for unrecognized tools it is the only
-		// thing rendered so that every tool use remains at least minimally visible.
-		const toolNameBadge = tool.tool ? (
-			<div className="text-xs text-vscode-descriptionForeground pl-6 mt-1">{tool.tool}</div>
+		// A small gray label showing the raw tool name. Prefer `toolName`, which the
+		// backend injects with the original API `tool_use.name` the agent invoked
+		// (e.g. "apply_diff"); fall back to the display-oriented `tool` field.
+		// For recognized tools this is appended below their rich UI; for
+		// unrecognized tools it is the only thing rendered so that every tool use
+		// remains at least minimally visible.
+		const rawToolName = tool.toolName ?? tool.tool
+		const toolNameBadge = rawToolName ? (
+			<div className="text-xs text-vscode-descriptionForeground pl-6 mt-1">{rawToolName}</div>
 		) : null
 
 		const toolContent: React.ReactNode = (() => {

@@ -814,6 +814,11 @@ export interface ClineSayTool {
 		| "runSlashCommand"
 		| "updateTodoList"
 		| "skill"
+	// The raw native tool name as sent by the model in the API `tool_use` block
+	// (e.g. "apply_diff", "read_file"). This differs from `tool` above, which is
+	// the display-oriented name (e.g. "appliedDiff"). Used by the UI to surface
+	// exactly which tool the agent invoked.
+	toolName?: string
 	path?: string
 	// For readCommandOutput
 	readStart?: number

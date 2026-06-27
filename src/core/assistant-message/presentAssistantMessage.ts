@@ -497,9 +497,26 @@ export async function presentAssistantMessage(cline: Task) {
 				progressStatus?: ToolProgressStatus,
 				isProtected?: boolean,
 			) => {
+				// For "tool" asks, inject the raw native tool name (block.name) into the
+				// message JSON so the UI can surface exactly which tool the agent invoked.
+				// The tool-provided JSON carries a display-oriented `tool` field; `toolName`
+				// preserves the original API `tool_use.name` (e.g. "apply_diff").
+				let resolvedMessage = partialMessage
+				if (type === "tool" && typeof partialMessage === "string") {
+					try {
+						const parsed = JSON.parse(partialMessage)
+						if (parsed && typeof parsed === "object" && parsed.toolName === undefined) {
+							parsed.toolName = block.name
+							resolvedMessage = JSON.stringify(parsed)
+						}
+					} catch {
+						// Not JSON or unparseable; leave the message untouched.
+					}
+				}
+
 				const { response, text, images } = await cline.ask(
 					type,
-					partialMessage,
+					resolvedMessage,
 					false,
 					progressStatus,
 					isProtected || false,
