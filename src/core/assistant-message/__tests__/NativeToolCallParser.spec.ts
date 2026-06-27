@@ -291,6 +291,113 @@ describe("NativeToolCallParser", () => {
 				})
 			})
 		})
+
+		describe("apply_diff tool", () => {
+			// Build diff markers via concatenation so the test source never contains
+			// contiguous conflict-marker tokens.
+			const MARK_SEARCH = `${"<".repeat(7)} SEARCH`
+			const MARK_SEP = "=".repeat(7)
+			const MARK_REPLACE = `${">".repeat(7)} REPLACE`
+
+			it("should parse standard apply_diff args with explicit path and diff", () => {
+				const diff = `${MARK_SEARCH}\n:start_line:1\nfoo\n${MARK_SEP}\nbar\n${MARK_REPLACE}`
+				const toolCall = {
+					id: "toolu_apply_1",
+					name: "apply_diff" as const,
+					arguments: JSON.stringify({ path: "src/foo.ts", diff }),
+				}
+
+				const result = NativeToolCallParser.parseToolCall(toolCall)
+
+				expect(result).not.toBeNull()
+				expect(result?.type).toBe("tool_use")
+				if (result?.type === "tool_use") {
+					const nativeArgs = result.nativeArgs as { path: string; diff: string }
+					expect(nativeArgs.path).toBe("src/foo.ts")
+					expect(nativeArgs.diff).toBe(diff)
+				}
+			})
+
+			it("should recover a path appended to the diff tail via a full-width DSML marker", () => {
+				// Reproduces a model that omits the `path` field and appends a path
+				// marker (using full-width vertical bars) to the end of the diff.
+				const fullWidthBar = "\uFF5C"
+				const diffBody = `${MARK_SEARCH}\n:start_line:233\n.foo {}\n${MARK_SEP}\n.bar {}\n${MARK_REPLACE}`
+				const appendedDiff =
+					diffBody +
+					`\n<${fullWidthBar}${fullWidthBar}DSML${fullWidthBar}${fullWidthBar}parameter name="path" string="true">frontend/src/pages/admin/ProjectLevelSettings.vue`
+
+				const toolCall = {
+					id: "toolu_apply_2",
+					name: "apply_diff" as const,
+					arguments: JSON.stringify({ diff: appendedDiff }),
+				}
+
+				const result = NativeToolCallParser.parseToolCall(toolCall)
+
+				expect(result).not.toBeNull()
+				expect(result?.type).toBe("tool_use")
+				if (result?.type === "tool_use") {
+					const nativeArgs = result.nativeArgs as { path: string; diff: string }
+					expect(nativeArgs.path).toBe("frontend/src/pages/admin/ProjectLevelSettings.vue")
+					// Marker must be stripped, leaving the original diff body intact.
+					expect(nativeArgs.diff).toBe(diffBody)
+				}
+			})
+
+			it("should recover a path appended to the diff tail via a half-width DSML marker", () => {
+				const diffBody = `${MARK_SEARCH}\n:start_line:1\nfoo\n${MARK_SEP}\nbar\n${MARK_REPLACE}`
+				const appendedDiff = diffBody + `\n<||DSML||parameter name="path" string="true">src/foo.ts`
+
+				const toolCall = {
+					id: "toolu_apply_3",
+					name: "apply_diff" as const,
+					arguments: JSON.stringify({ diff: appendedDiff }),
+				}
+
+				const result = NativeToolCallParser.parseToolCall(toolCall)
+
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const nativeArgs = result.nativeArgs as { path: string; diff: string }
+					expect(nativeArgs.path).toBe("src/foo.ts")
+					expect(nativeArgs.diff).toBe(diffBody)
+				}
+			})
+
+			it("should NOT alter a normal call when path is present", () => {
+				// When the path field is supplied, the diff must be passed through untouched.
+				const diff = `${MARK_SEARCH}\nfoo\n${MARK_SEP}\nbar\n${MARK_REPLACE}`
+				const toolCall = {
+					id: "toolu_apply_4",
+					name: "apply_diff" as const,
+					arguments: JSON.stringify({ path: "src/explicit.ts", diff }),
+				}
+
+				const result = NativeToolCallParser.parseToolCall(toolCall)
+
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const nativeArgs = result.nativeArgs as { path: string; diff: string }
+					expect(nativeArgs.path).toBe("src/explicit.ts")
+					expect(nativeArgs.diff).toBe(diff)
+				}
+			})
+
+			it("should treat the call as invalid when path is missing and no marker is present", () => {
+				const diff = `${MARK_SEARCH}\nfoo\n${MARK_SEP}\nbar\n${MARK_REPLACE}`
+				const toolCall = {
+					id: "toolu_apply_5",
+					name: "apply_diff" as const,
+					arguments: JSON.stringify({ diff }),
+				}
+
+				const result = NativeToolCallParser.parseToolCall(toolCall)
+
+				// No path could be recovered, so the call must not produce nativeArgs.
+				expect(result).toBeNull()
+			})
+		})
 	})
 
 	describe("processStreamingChunk", () => {
@@ -339,6 +446,31 @@ describe("NativeToolCallParser", () => {
 					expect(nativeArgs.path).toBe("finalized.ts")
 					expect(nativeArgs.offset).toBe(1)
 					expect(nativeArgs.limit).toBe(10)
+				}
+			})
+		})
+
+		describe("apply_diff tool", () => {
+			it("should recover an appended path on finalize when the path field is omitted", () => {
+				const id = "toolu_finalize_apply_diff"
+				NativeToolCallParser.startStreamingToolCall(id, "apply_diff")
+
+				const fullWidthBar = "\uFF5C"
+				const diffBody = `${"<".repeat(7)} SEARCH\n:start_line:1\nfoo\n${"=".repeat(7)}\nbar\n${">".repeat(7)} REPLACE`
+				const appendedDiff =
+					diffBody +
+					`\n<${fullWidthBar}${fullWidthBar}DSML${fullWidthBar}${fullWidthBar}parameter name="path" string="true">src/recovered.ts`
+
+				NativeToolCallParser.processStreamingChunk(id, JSON.stringify({ diff: appendedDiff }))
+
+				const result = NativeToolCallParser.finalizeStreamingToolCall(id)
+
+				expect(result).not.toBeNull()
+				expect(result?.type).toBe("tool_use")
+				if (result?.type === "tool_use") {
+					const nativeArgs = result.nativeArgs as { path: string; diff: string }
+					expect(nativeArgs.path).toBe("src/recovered.ts")
+					expect(nativeArgs.diff).toBe(diffBody)
 				}
 			})
 		})

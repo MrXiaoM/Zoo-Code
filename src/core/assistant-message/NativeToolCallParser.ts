@@ -325,6 +325,52 @@ export class NativeToolCallParser {
 	}
 
 	/**
+	 * Some models occasionally fail to emit the `path` argument as its own JSON
+	 * field and instead append a path marker to the tail of the `diff` string,
+	 * e.g.:
+	 *
+	 *   ...>>>>>>> REPLACE\n<｜｜DSML｜｜parameter name="path" string="true">src/foo.ts
+	 *
+	 * The marker uses model-specific tokens (full-width or half-width vertical
+	 * bars and angle brackets). When this happens the real `path` argument ends
+	 * up undefined and the tool call is rejected as missing a required parameter.
+	 *
+	 * This helper detects such an appended marker at the END of a diff string,
+	 * extracts the embedded path, and returns the diff with the marker stripped.
+	 * It only matches when the marker is present; otherwise it returns null so
+	 * that normal, well-formed tool calls are completely unaffected.
+	 *
+	 * @param diff - The raw diff string that may contain a trailing path marker
+	 * @returns `{ path, diff }` when a marker was found and removed, otherwise null
+	 */
+	private static extractAppendedPathFromDiff(diff: unknown): { path: string; diff: string } | null {
+		if (typeof diff !== "string" || diff.length === 0) {
+			return null
+		}
+
+		// Tolerate both half-width (<, >, |) and full-width (＜, ＞, ｜) tokens.
+		// Matches a trailing marker like:
+		//   <｜｜DSML｜｜parameter name="path" string="true">path/to/file
+		const markerRegex =
+			/[<＜][｜|＞>＜<\s]*DSML[｜|＞>＜<\s]*parameter\s+name=["']path["'][^>＞]*[>＞]\s*([^\r\n｜|<>＜＞]+?)\s*$/i
+
+		const match = diff.match(markerRegex)
+		if (!match || match.index === undefined) {
+			return null
+		}
+
+		const extractedPath = match[1]?.trim()
+		if (!extractedPath) {
+			return null
+		}
+
+		// Strip the marker (and any whitespace preceding it) from the diff.
+		const cleanedDiff = diff.slice(0, match.index).replace(/\s+$/, "")
+
+		return { path: extractedPath, diff: cleanedDiff }
+	}
+
+	/**
 	 * Convert raw file entries from API (with line_ranges) to FileEntry objects
 	 * (with lineRanges). Handles multiple formats for backward compatibility:
 	 *
@@ -482,14 +528,29 @@ export class NativeToolCallParser {
 				}
 				break
 
-			case "apply_diff":
-				if (partialArgs.path !== undefined || partialArgs.diff !== undefined) {
+			case "apply_diff": {
+				let applyDiffPath = partialArgs.path
+				let applyDiffContent = partialArgs.diff
+
+				// Recover a path that some models append to the tail of the diff
+				// string instead of emitting it as its own field. Only triggers
+				// when the path field is genuinely absent.
+				if (applyDiffPath === undefined && typeof applyDiffContent === "string") {
+					const recovered = this.extractAppendedPathFromDiff(applyDiffContent)
+					if (recovered) {
+						applyDiffPath = recovered.path
+						applyDiffContent = recovered.diff
+					}
+				}
+
+				if (applyDiffPath !== undefined || applyDiffContent !== undefined) {
 					nativeArgs = {
-						path: partialArgs.path,
-						diff: partialArgs.diff,
+						path: applyDiffPath,
+						diff: applyDiffContent,
 					}
 				}
 				break
+			}
 
 			case "codebase_search":
 				if (partialArgs.query !== undefined) {
@@ -793,14 +854,29 @@ export class NativeToolCallParser {
 					}
 					break
 
-				case "apply_diff":
-					if (args.path !== undefined && args.diff !== undefined) {
+				case "apply_diff": {
+					let applyDiffPath = args.path
+					let applyDiffContent = args.diff
+
+					// Some models omit the `path` field and instead append a path
+					// marker to the tail of the `diff` string. Recover the path and
+					// strip the marker so the call can proceed normally.
+					if (applyDiffPath === undefined && typeof applyDiffContent === "string") {
+						const recovered = this.extractAppendedPathFromDiff(applyDiffContent)
+						if (recovered) {
+							applyDiffPath = recovered.path
+							applyDiffContent = recovered.diff
+						}
+					}
+
+					if (applyDiffPath !== undefined && applyDiffContent !== undefined) {
 						nativeArgs = {
-							path: args.path,
-							diff: args.diff,
+							path: applyDiffPath,
+							diff: applyDiffContent,
 						} as NativeArgsFor<TName>
 					}
 					break
+				}
 
 				case "edit":
 				case "search_and_replace":
