@@ -428,6 +428,44 @@ export const ChatRowContent = ({
 		return () => vscode.postMessage({ type: "openFile", text: "./" + tool.path })
 	}, [tool])
 
+	// Allow file-editing tool results (apply_diff, edited files, inserted content)
+	// to be opened in the editor at the first changed line, mirroring the readFile
+	// behavior. The starting line is parsed from the unified diff's first hunk
+	// header (`@@ -a,b +c,d @@`), falling back to the top of the file.
+	const onJumpToEditedFile = useMemo(() => {
+		if (!tool || !tool.path) {
+			return undefined
+		}
+
+		const editToolNames = [
+			"appliedDiff",
+			"editedExistingFile",
+			"insertContent",
+			"searchAndReplace",
+			"search_and_replace",
+			"search_replace",
+			"edit",
+			"edit_file",
+			"apply_patch",
+			"apply_diff",
+		]
+
+		if (!editToolNames.includes(tool.tool as string)) {
+			return undefined
+		}
+
+		const diffText = (tool.content ?? tool.diff) as string | undefined
+		const hunkMatch = diffText?.match(/^@@ -\d+(?:,\d+)? \+(\d+)/m)
+		const startLine = hunkMatch ? parseInt(hunkMatch[1], 10) : undefined
+
+		return () =>
+			vscode.postMessage({
+				type: "openFile",
+				text: "./" + tool.path,
+				values: startLine ? { line: startLine } : undefined,
+			})
+	}, [tool])
+
 	const followUpData = useMemo(() => {
 		if (message.type === "ask" && message.ask === "followup" && !message.partial) {
 			return safeJsonParse<FollowUpData>(message.text)
@@ -512,7 +550,7 @@ export const ChatRowContent = ({
 									isLoading={message.partial}
 									isExpanded={isExpanded}
 									onToggleExpand={handleToggleExpand}
-									onJumpToFile={onJumpToCreatedFile}
+									onJumpToFile={onJumpToCreatedFile ?? onJumpToEditedFile}
 									diffStats={tool.diffStats}
 								/>
 							</div>
@@ -554,6 +592,7 @@ export const ChatRowContent = ({
 									isLoading={message.partial}
 									isExpanded={isExpanded}
 									onToggleExpand={handleToggleExpand}
+									onJumpToFile={onJumpToEditedFile}
 									diffStats={tool.diffStats}
 								/>
 							</div>

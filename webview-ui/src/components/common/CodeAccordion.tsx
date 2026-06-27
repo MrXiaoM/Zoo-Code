@@ -100,7 +100,7 @@ const CodeAccordion = ({
 					)}
 					{onJumpToFile && path && (
 						<span
-							className="codicon codicon-link-external mr-1"
+							className="codicon codicon-link-external mr-1 opacity-0 group-hover:opacity-100"
 							style={{ fontSize: 13.5 }}
 							onClick={(e) => {
 								e.stopPropagation()
@@ -109,10 +109,8 @@ const CodeAccordion = ({
 							aria-label={`Open file: ${path}`}
 						/>
 					)}
-					{!onJumpToFile && (
-						<span
-							className={`opacity-0 group-hover:opacity-100 codicon codicon-chevron-${isExpanded ? "up" : "down"}`}></span>
-					)}
+					<span
+						className={`opacity-0 group-hover:opacity-100 codicon codicon-chevron-${isExpanded ? "up" : "down"}`}></span>
 				</ToolUseBlockHeader>
 			)}
 			{(!hasHeader || isExpanded) && (
