@@ -1,25 +1,25 @@
 import type OpenAI from "openai"
 
-const SEARCH_FILES_DESCRIPTION = `Request to perform a regex search across files in a specified directory, providing context-rich results. This tool searches for patterns or specific content across multiple files, displaying each match with encapsulating context.
+const SEARCH_FILES_DESCRIPTION = `请求在指定目录中的文件之间执行正则表达式搜索，提供上下文丰富的结果。此工具搜索跨多个文件的模式或特定内容，显示每个匹配项及其上下文。
 
-Craft your regex patterns carefully to balance specificity and flexibility. Use this tool to find code patterns, TODO comments, function definitions, or any text-based information across the project. The results include surrounding context, so analyze the surrounding code to better understand the matches. Leverage this tool in combination with other tools for more comprehensive analysis.
+仔细编写你的正则表达式模式，以平衡特殊性和灵活性。使用此工具查找代码模式、TODO 注释、函数定义或项目中的任何基于文本的信息。结果包含周围上下文，因此分析周围代码以更好地理解匹配项。将此工具与其他工具结合使用以进行更全面的分析。
 
-Parameters:
-- path: (required) The path of the directory to search in (relative to the current workspace directory). This directory will be recursively searched.
-- regex: (required) The regular expression pattern to search for. Uses Rust regex syntax.
-- file_pattern: (optional) Glob pattern to filter files (e.g., '*.ts' for TypeScript files). If not provided, it will search all files (*).
+参数：
+- path：（必需）要搜索的目录路径（相对于当前工作区目录）。此目录将被递归搜索。
+- regex：（必需）要搜索的正则表达式模式。使用 Rust regex 语法。
+- file_pattern：（可选）用于过滤文件的 Glob 模式（例如 '*.ts' 用于 TypeScript 文件）。如果未提供，将搜索所有文件（*）。
 
-Example: Searching for all .ts files in the current directory
+示例：在当前目录中搜索所有 .ts 文件
 { "path": ".", "regex": ".*", "file_pattern": "*.ts" }
 
-Example: Searching for function definitions in JavaScript files
+示例：在 JavaScript 文件中搜索函数定义
 { "path": "src", "regex": "function\\s+\\w+", "file_pattern": "*.js" }`
 
-const PATH_PARAMETER_DESCRIPTION = `Directory to search recursively, relative to the workspace`
+const PATH_PARAMETER_DESCRIPTION = `要递归搜索的目录，相对于工作区`
 
-const REGEX_PARAMETER_DESCRIPTION = `Rust-compatible regular expression pattern to match`
+const REGEX_PARAMETER_DESCRIPTION = `要匹配的 Rust 兼容正则表达式模式`
 
-const FILE_PATTERN_PARAMETER_DESCRIPTION = `Optional glob to limit which files are searched (e.g., *.ts)`
+const FILE_PATTERN_PARAMETER_DESCRIPTION = `可选的 Glob 模式，限制搜索哪些文件（例如 *.ts）`
 
 export default {
 	type: "function",

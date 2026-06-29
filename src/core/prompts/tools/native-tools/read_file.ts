@@ -62,15 +62,15 @@ export function createReadFileTool(options: ReadFileToolOptions = {}): OpenAI.Ch
 
 	// Build description based on capabilities
 	const descriptionIntro =
-		"Read a file and return its contents with line numbers for diffing or discussion. IMPORTANT: This tool reads exactly one file per call. If you need multiple files, issue multiple parallel read_file calls."
+		"读取文件并返回带有行号的内容，用于 diff 或讨论。重要：此工具每次调用只读取一个文件。如果你需要多个文件，请发出多个并行的 read_file 调用。"
 
 	const modeDescription =
-		` Supports two modes: 'slice' (default) reads lines sequentially with offset/limit; 'indentation' extracts complete semantic code blocks around an anchor line based on indentation hierarchy.` +
-		` Slice mode is ideal for initial file exploration, understanding overall structure, reading configuration/data files, or when you need a specific line range. Use it when you don't have a target line number.` +
-		` PREFER indentation mode when you have a specific line number from search results, error messages, or definition lookups - it guarantees complete, syntactically valid code blocks without mid-function truncation.` +
-		` IMPORTANT: Indentation mode requires anchor_line to be useful. Without it, only header content (imports) is returned.`
+		` 支持两种模式：'slice'（默认）按顺序读取行，使用 offset/limit；'indentation' 基于缩进层级提取锚点行周围的完整语义代码块。` +
+		` Slice 模式非常适合初始文件探索、理解整体结构、读取配置/数据文件，或者当你需要特定行范围时。在你没有目标行号时使用它。` +
+		` 当你从搜索结果、错误消息或定义查找中获得特定行号时，优先使用 indentation 模式——它保证返回完整、语法有效的代码块，不会在函数中间截断。` +
+		` 重要：Indentation 模式需要 anchor_line 才能发挥作用。没有它，只会返回头部内容（导入语句）。`
 
-	const limitNote = ` By default, returns up to ${DEFAULT_LINE_LIMIT} lines per file. Lines longer than ${MAX_LINE_LENGTH} characters are truncated.`
+	const limitNote = ` 默认情况下，每个文件最多返回 ${DEFAULT_LINE_LIMIT} 行。超过 ${MAX_LINE_LENGTH} 个字符的行会被截断。`
 
 	const description =
 		descriptionIntro +
@@ -78,59 +78,57 @@ export function createReadFileTool(options: ReadFileToolOptions = {}): OpenAI.Ch
 		limitNote +
 		" " +
 		getReadFileSupportsNote(supportsImages) +
-		` Example: { path: 'src/app.ts' }` +
-		` Example (indentation mode): { path: 'src/app.ts', mode: 'indentation', indentation: { anchor_line: 42 } }`
+		` 示例：{ path: 'src/app.ts' }` +
+		` 示例（indentation 模式）：{ path: 'src/app.ts', mode: 'indentation', indentation: { anchor_line: 42 } }`
 
 	const indentationProperties: Record<string, unknown> = {
 		anchor_line: {
 			type: "integer",
 			description:
-				"1-based line number to anchor the extraction. REQUIRED for meaningful indentation mode results. The extractor finds the semantic block (function, method, class) containing this line and returns it completely. Without anchor_line, indentation mode defaults to line 1 and returns only imports/header content. Obtain anchor_line from: search results, error stack traces, definition lookups, codebase_search results, or condensed file summaries (e.g., '14--28 | export class UserService' means anchor_line=14).",
+				"1-based 的行号，用于锚定提取。有意义的 indentation 模式结果必需此项。提取器会找到包含该行的语义块（函数、方法、类），并将其完整返回。没有 anchor_line 时，indentation 模式默认从第 1 行开始，只返回导入/头部内容。从以下来源获取 anchor_line：搜索结果、错误堆栈跟踪、定义查找、codebase_search 结果或压缩的文件摘要（例如 '14--28 | export class UserService' 表示 anchor_line=14）。",
 		},
 		max_levels: {
 			type: "integer",
-			description: `Maximum indentation levels to include above the anchor (indentation mode, 0 = unlimited (default)). Higher values include more parent context.`,
+			description: `在锚点之上包含的最大缩进层级（indentation 模式，0 = 无限制（默认））。值越高包含的父上下文越多。`,
 		},
 		include_siblings: {
 			type: "boolean",
 			description:
-				"Include sibling blocks at the same indentation level as the anchor block (indentation mode, default: false). Useful for seeing related methods in a class.",
+				"包含与锚点块处于同一缩进级别的兄弟块（indentation 模式，默认：false）。用于查看类中的关联方法。",
 		},
 		include_header: {
 			type: "boolean",
-			description:
-				"Include file header content (imports, module-level comments) at the top of output (indentation mode, default: true).",
+			description: "在输出顶部包含文件头部内容（导入、模块级注释）（indentation 模式，默认：true）。",
 		},
 		max_lines: {
 			type: "integer",
-			description:
-				"Hard cap on lines returned for indentation mode. Acts as a separate limit from the top-level 'limit' parameter.",
+			description: "indentation 模式返回行数的硬性上限。作为顶层 'limit' 参数的独立限制。",
 		},
 	}
 
 	const properties: Record<string, unknown> = {
 		path: {
 			type: "string",
-			description: "Path to the file to read, relative to the workspace",
+			description: "要读取的文件路径，相对于工作区",
 		},
 		mode: {
 			type: "string",
 			enum: ["slice", "indentation"],
 			description:
-				"Reading mode. 'slice' (default): read lines sequentially with offset/limit - use for general file exploration or when you don't have a target line number (may truncate code mid-function). 'indentation': extract complete semantic code blocks containing anchor_line - PREFERRED when you have a line number because it guarantees complete, valid code blocks. WARNING: Do not use indentation mode without specifying indentation.anchor_line, or you will only get header content.",
+				"读取模式。'slice'（默认）：使用 offset/limit 按顺序读取行——用于一般文件探索或当你没有目标行号时（可能会在函数中间截断代码）。'indentation'：提取包含 anchor_line 的完整语义代码块——当你有行号时优先使用，因为它保证返回完整、有效的代码块。警告：不要在不指定 indentation.anchor_line 的情况下使用 indentation 模式，否则你只会得到头部内容。",
 		},
 		offset: {
 			type: "integer",
-			description: "1-based line offset to start reading from (slice mode, default: 1)",
+			description: "1-based 行偏移量，从该行开始读取（slice 模式，默认：1）",
 		},
 		limit: {
 			type: "integer",
-			description: `Maximum number of lines to return (slice mode, default: ${DEFAULT_LINE_LIMIT})`,
+			description: `返回的最大行数（slice 模式，默认：${DEFAULT_LINE_LIMIT}）`,
 		},
 		indentation: {
 			type: "object",
 			description:
-				"Indentation mode options. Only used when mode='indentation'. You MUST specify anchor_line for useful results - it determines which code block to extract.",
+				"Indentation 模式选项。仅在 mode='indentation' 时使用。你必须指定 anchor_line 以获取有用的结果——它决定了要提取哪个代码块。",
 			properties: indentationProperties,
 			required: [],
 			additionalProperties: false,

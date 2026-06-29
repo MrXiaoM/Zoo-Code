@@ -375,7 +375,7 @@ describe("SYSTEM_PROMPT", () => {
 		)
 
 		// Role definition should be at the top
-		expect(prompt.indexOf("Custom role definition")).toBeLessThan(prompt.indexOf("TOOL USE"))
+		expect(prompt.indexOf("Custom role definition")).toBeLessThan(prompt.indexOf("工具使用"))
 
 		// Custom instructions should be at the bottom
 		const customInstructionsIndex = prompt.indexOf("Custom mode instructions")
@@ -409,7 +409,7 @@ describe("SYSTEM_PROMPT", () => {
 		)
 
 		// Role definition from promptComponent should be at the top
-		expect(prompt.indexOf("Custom prompt role definition")).toBeLessThan(prompt.indexOf("TOOL USE"))
+		expect(prompt.indexOf("Custom prompt role definition")).toBeLessThan(prompt.indexOf("工具使用"))
 		// Should not contain the default mode's role definition
 		expect(prompt).not.toContain(modes[0].roleDefinition)
 	})
@@ -438,7 +438,7 @@ describe("SYSTEM_PROMPT", () => {
 		)
 
 		// Should use the default mode's role definition
-		expect(prompt.indexOf(modes[0].roleDefinition)).toBeLessThan(prompt.indexOf("TOOL USE"))
+		expect(prompt.indexOf(modes[0].roleDefinition)).toBeLessThan(prompt.indexOf("工具使用"))
 	})
 
 	it("should exclude update_todo_list tool when todoListEnabled is false", async () => {
@@ -549,16 +549,16 @@ describe("SYSTEM_PROMPT", () => {
 		)
 
 		// Should contain TOOL USE section with native note
-		expect(prompt).toContain("TOOL USE")
-		expect(prompt).toContain("provider-native tool-calling mechanism")
-		expect(prompt).toContain("Do not include XML markup or examples")
+		expect(prompt).toContain("工具使用")
+		expect(prompt).toContain("提供商原生的工具调用机制")
+		expect(prompt).toContain("不要包含 XML 标记或示例")
 
 		// Should NOT contain XML-style tags or examples
 		expect(prompt).not.toContain("<actual_tool_name>")
 		expect(prompt).not.toContain("</actual_tool_name>")
 
 		// Should contain Tool Use Guidelines section
-		expect(prompt).toContain("Tool Use Guidelines")
+		expect(prompt).toContain("工具使用指南")
 
 		// Should NOT contain a tool catalog / XML examples
 		expect(prompt).not.toContain("# Tools")
@@ -571,10 +571,10 @@ describe("SYSTEM_PROMPT", () => {
 
 		// Should still contain role definition and other non-XML sections
 		expect(prompt).toContain(modes[0].roleDefinition)
-		expect(prompt).toContain("CAPABILITIES")
-		expect(prompt).toContain("RULES")
-		expect(prompt).toContain("SYSTEM INFORMATION")
-		expect(prompt).toContain("OBJECTIVE")
+		expect(prompt).toContain("能力")
+		expect(prompt).toContain("规则")
+		expect(prompt).toContain("系统信息")
+		expect(prompt).toContain("目标")
 	})
 
 	describe("allowedMcpServers filtering in system prompt", () => {
@@ -637,7 +637,7 @@ describe("SYSTEM_PROMPT", () => {
 				undefined,
 			)
 
-			expect(prompt).toContain("MCP servers")
+			expect(prompt).toContain("MCP 服务器")
 		})
 	})
 

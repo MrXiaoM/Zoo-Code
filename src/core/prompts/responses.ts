@@ -8,7 +8,7 @@ export const formatResponse = {
 	toolDenied: () =>
 		JSON.stringify({
 			status: "denied",
-			message: "The user denied this operation.",
+			message: "用户拒绝了此操作。",
 		}),
 
 	toolDeniedWithFeedback: (feedback?: string) =>
@@ -26,7 +26,7 @@ export const formatResponse = {
 	toolError: (error?: string) =>
 		JSON.stringify({
 			status: "error",
-			message: "The tool execution failed",
+			message: "工具执行失败",
 			error,
 		}),
 
@@ -34,24 +34,24 @@ export const formatResponse = {
 		JSON.stringify({
 			status: "error",
 			type: "access_denied",
-			message: "Access blocked by .rooignore",
+			message: "访问被 .rooignore 阻止",
 			path,
-			suggestion: "Try to continue without this file, or ask the user to update the .rooignore file",
+			suggestion: "尝试在没有此文件的情况下继续，或要求用户更新 .rooignore 文件",
 		}),
 
 	noToolsUsed: () => {
 		const instructions = getToolInstructionsReminder()
 
-		return `[ERROR] You did not use a tool in your previous response! Please retry with a tool use.
+		return `[错误] 你在上一轮响应中没有使用工具！请重试并使用工具。
 
 ${instructions}
 
-# Next Steps
+# 后续步骤
 
-If you have completed the user's task, use the attempt_completion tool.
-If you require additional information from the user, use the ask_followup_question tool.
-Otherwise, if you have not completed the task and do not need additional information, then proceed with the next step of the task.
-(This is an automated message, so do not respond to it conversationally.)`
+如果你已完成用户的任务，使用 attempt_completion 工具。
+如果你需要用户提供额外信息，使用 ask_followup_question 工具。
+否则，如果你尚未完成任务且不需要额外信息，则继续执行任务的下一步。
+（这是一条自动消息，请不要以对话方式回复。）`
 	},
 
 	tooManyMistakes: (feedback?: string) =>
@@ -63,35 +63,35 @@ Otherwise, if you have not completed the task and do not need additional informa
 	missingToolParameterError: (paramName: string) => {
 		const instructions = getToolInstructionsReminder()
 
-		return `Missing value for required parameter '${paramName}'. Please retry with complete response.\n\n${instructions}`
+		return `缺少必需参数 '${paramName}' 的值。请以完整响应重试。\n\n${instructions}`
 	},
 
 	invalidMcpToolArgumentError: (serverName: string, toolName: string) =>
 		JSON.stringify({
 			status: "error",
 			type: "invalid_argument",
-			message: "Invalid JSON argument",
+			message: "无效的 JSON 参数",
 			server: serverName,
 			tool: toolName,
-			suggestion: "Please retry with a properly formatted JSON argument",
+			suggestion: "请使用格式正确的 JSON 参数重试",
 		}),
 
 	unknownMcpToolError: (serverName: string, toolName: string, availableTools: string[]) =>
 		JSON.stringify({
 			status: "error",
 			type: "unknown_tool",
-			message: "Tool does not exist on server",
+			message: "服务器上不存在该工具",
 			server: serverName,
 			tool: toolName,
 			available_tools: availableTools.length > 0 ? availableTools : [],
-			suggestion: "Please use one of the available tools or check if the server is properly configured",
+			suggestion: "请使用其中一个可用工具，或检查服务器是否已正确配置",
 		}),
 
 	unknownMcpServerError: (serverName: string, availableServers: string[]) =>
 		JSON.stringify({
 			status: "error",
 			type: "unknown_server",
-			message: "Server is not configured",
+			message: "服务器未配置",
 			server: serverName,
 			available_servers: availableServers.length > 0 ? availableServers : [],
 		}),
@@ -216,11 +216,11 @@ const formatImagesIntoBlocks = (images?: string[]): Anthropic.ImageBlockParam[] 
 		: []
 }
 
-const toolUseInstructionsReminderNative = `# Reminder: Instructions for Tool Use
+const toolUseInstructionsReminderNative = `# 提醒：工具使用说明
 
-Tools are invoked using the platform's native tool calling mechanism. Each tool requires specific parameters as defined in the tool descriptions. Refer to the tool definitions provided in your system instructions for the correct parameter structure and usage examples.
+工具使用平台原生工具调用机制来调用。每个工具需要工具描述中定义的特定参数。请参考系统指令中提供的工具定义，获取正确的参数结构和使用示例。
 
-Always ensure you provide all required parameters for the tool you wish to use.`
+始终确保你为想要使用的工具提供所有必需的参数。`
 
 /**
  * Gets the tool use instructions reminder.

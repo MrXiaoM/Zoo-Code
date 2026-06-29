@@ -14,8 +14,8 @@ describe("addCustomInstructions", () => {
 			{ language: "fr" },
 		)
 
-		expect(result).toContain("Language Preference:")
-		expect(result).toContain('You should always speak and think in the "Français" (fr) language')
+		expect(result).toContain("语言偏好：")
+		expect(result).toContain('你应该始终以"Français"（fr）语言来思考和表达')
 	})
 
 	it("works without vscode language", async () => {
@@ -26,8 +26,8 @@ describe("addCustomInstructions", () => {
 			"test-mode",
 		)
 
-		expect(result).not.toContain("Language Preference:")
-		expect(result).not.toContain("You should always speak and think in")
+		expect(result).not.toContain("语言偏好：")
+		expect(result).not.toContain("你应该始终以")
 	})
 })
 
@@ -37,10 +37,11 @@ describe("getCapabilitiesSection", () => {
 	it("includes standard capabilities", () => {
 		const result = getCapabilitiesSection(cwd)
 
-		expect(result).toContain("CAPABILITIES")
-		expect(result).toContain("execute CLI commands")
-		expect(result).toContain("list files")
-		expect(result).toContain("read and write files")
+		expect(result).toContain("能力")
+		expect(result).toContain("执行 CLI 命令")
+		expect(result).toContain("列出文件")
+		expect(result).toContain("列出文件")
+		expect(result).toContain("读写文件")
 	})
 
 	const createMockMcpHub = (serverNames: string[]): McpHub =>
@@ -52,41 +53,41 @@ describe("getCapabilitiesSection", () => {
 		const mockMcpHub = createMockMcpHub(["test-server"])
 		const result = getCapabilitiesSection(cwd, mockMcpHub)
 
-		expect(result).toContain("MCP servers")
+		expect(result).toContain("MCP 服务器")
 	})
 
 	it("excludes MCP reference when mcpHub is undefined", () => {
 		const result = getCapabilitiesSection(cwd, undefined)
 
-		expect(result).not.toContain("MCP servers")
+		expect(result).not.toContain("MCP 服务器")
 	})
 
 	it("excludes MCP reference when mcpHub exposes no servers", () => {
 		const mockMcpHub = createMockMcpHub([])
 		const result = getCapabilitiesSection(cwd, mockMcpHub)
 
-		expect(result).not.toContain("MCP servers")
+		expect(result).not.toContain("MCP 服务器")
 	})
 
 	it("includes MCP reference when allowedMcpServers matches a connected server", () => {
 		const mockMcpHub = createMockMcpHub(["allowed-server", "other-server"])
 		const result = getCapabilitiesSection(cwd, mockMcpHub, ["allowed-server"])
 
-		expect(result).toContain("MCP servers")
+		expect(result).toContain("MCP 服务器")
 	})
 
 	it("excludes MCP reference when allowedMcpServers is an empty array", () => {
 		const mockMcpHub = createMockMcpHub(["test-server"])
 		const result = getCapabilitiesSection(cwd, mockMcpHub, [])
 
-		expect(result).not.toContain("MCP servers")
+		expect(result).not.toContain("MCP 服务器")
 	})
 
 	it("excludes MCP reference when allowedMcpServers matches no connected server", () => {
 		const mockMcpHub = createMockMcpHub(["test-server"])
 		const result = getCapabilitiesSection(cwd, mockMcpHub, ["nonexistent-server"])
 
-		expect(result).not.toContain("MCP servers")
+		expect(result).not.toContain("MCP 服务器")
 	})
 })
 
@@ -96,8 +97,8 @@ describe("getRulesSection", () => {
 	it("includes standard rules", () => {
 		const result = getRulesSection(cwd)
 
-		expect(result).toContain("RULES")
-		expect(result).toContain("project base directory")
+		expect(result).toContain("规则")
+		expect(result).toContain("项目根目录为")
 		expect(result).toContain(cwd)
 	})
 
@@ -196,9 +197,9 @@ describe("getRulesSection shell-aware command chaining", () => {
 		vi.spyOn(shellUtils, "getShell").mockReturnValue("/bin/bash")
 		const result = getRulesSection(cwd)
 
-		expect(result).toContain("cd (path to project) && (command")
-		expect(result).not.toContain("cd (path to project) ; (command")
-		expect(result).not.toContain("cd (path to project) & (command")
+		expect(result).toContain("cd (项目路径) && (命令")
+		expect(result).not.toContain("cd (项目路径) ; (命令")
+		expect(result).not.toContain("cd (项目路径) & (命令")
 	})
 
 	it("uses ; for PowerShell in command chaining example", () => {
@@ -207,16 +208,16 @@ describe("getRulesSection shell-aware command chaining", () => {
 		)
 		const result = getRulesSection(cwd)
 
-		expect(result).toContain("cd (path to project) ; (command")
-		expect(result).toContain("Note: Using `;` for PowerShell command chaining")
+		expect(result).toContain("cd (项目路径) ; (命令")
+		expect(result).toContain("注意：使用 `;` 进行 PowerShell 命令链接")
 	})
 
 	it("uses && for cmd.exe in command chaining example", () => {
 		vi.spyOn(shellUtils, "getShell").mockReturnValue("C:\\Windows\\System32\\cmd.exe")
 		const result = getRulesSection(cwd)
 
-		expect(result).toContain("cd (path to project) && (command")
-		expect(result).toContain("Note: Using `&&` for cmd.exe command chaining")
+		expect(result).toContain("cd (项目路径) && (命令")
+		expect(result).toContain("注意：使用 `&&` 进行 cmd.exe 命令链接（条件执行）")
 	})
 
 	it("includes Unix utility guidance for PowerShell", () => {
@@ -225,37 +226,37 @@ describe("getRulesSection shell-aware command chaining", () => {
 		)
 		const result = getRulesSection(cwd)
 
-		expect(result).toContain("IMPORTANT: When using PowerShell, avoid Unix-specific utilities")
-		expect(result).toContain("`sed`, `grep`, `awk`, `cat`, `rm`, `cp`, `mv`")
-		expect(result).toContain("`Select-String` for grep")
-		expect(result).toContain("`Get-Content` for cat")
-		expect(result).toContain("PowerShell's `-replace` operator")
+		expect(result).toContain("重要：使用 PowerShell 时，避免 Unix 特定工具如")
+		expect(result).toContain("`sed`、`grep`、`awk`、`cat`、`rm`、`cp`、`mv`")
+		expect(result).toContain("`Select-String` 代替 grep")
+		expect(result).toContain("`Get-Content` 代替 cat")
+		expect(result).toContain("PowerShell 的 `-replace` 运算符")
 	})
 
 	it("includes Unix utility guidance for cmd.exe", () => {
 		vi.spyOn(shellUtils, "getShell").mockReturnValue("C:\\Windows\\System32\\cmd.exe")
 		const result = getRulesSection(cwd)
 
-		expect(result).toContain("IMPORTANT: When using cmd.exe, avoid Unix-specific utilities")
-		expect(result).toContain("`sed`, `grep`, `awk`, `cat`, `rm`, `cp`, `mv`")
-		expect(result).toContain("`type` for cat")
-		expect(result).toContain("`del` for rm")
-		expect(result).toContain("`find`/`findstr` for grep")
+		expect(result).toContain("重要：使用 cmd.exe 时，避免 Unix 特定工具如")
+		expect(result).toContain("`sed`、`grep`、`awk`、`cat`、`rm`、`cp`、`mv`")
+		expect(result).toContain("`type` 代替 cat")
+		expect(result).toContain("`del` 代替 rm")
+		expect(result).toContain("`find`/`findstr` 代替 grep")
 	})
 
 	it("does not include Unix utility guidance for Unix shells", () => {
 		vi.spyOn(shellUtils, "getShell").mockReturnValue("/bin/bash")
 		const result = getRulesSection(cwd)
 
-		expect(result).not.toContain("IMPORTANT: When using PowerShell")
-		expect(result).not.toContain("IMPORTANT: When using cmd.exe")
-		expect(result).not.toContain("`Select-String` for grep")
+		expect(result).not.toContain("重要：使用 PowerShell 时，避免 Unix 特定工具如")
+		expect(result).not.toContain("重要：使用 cmd.exe 时，避免 Unix 特定工具如")
+		expect(result).not.toContain("`Select-String` 代替 grep")
 	})
 
 	it("does not include note for Unix shells", () => {
 		vi.spyOn(shellUtils, "getShell").mockReturnValue("/bin/zsh")
 		const result = getRulesSection(cwd)
 
-		expect(result).not.toContain("Note: Using")
+		expect(result).not.toContain("注意：使用")
 	})
 })

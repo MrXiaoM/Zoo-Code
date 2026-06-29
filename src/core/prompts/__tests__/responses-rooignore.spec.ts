@@ -56,8 +56,8 @@ describe("RooIgnore Response Formatting", () => {
 			expect(parsed.status).toBe("error")
 			expect(parsed.type).toBe("access_denied")
 			expect(parsed.path).toBe("secrets/api-keys.json")
-			expect(parsed.suggestion).toContain("continue without this file")
-			expect(parsed.suggestion).toContain("update the .rooignore file")
+			expect(parsed.suggestion).toContain("在没有此文件的情况下继续")
+			expect(parsed.suggestion).toContain("更新 .rooignore 文件")
 		})
 
 		/**

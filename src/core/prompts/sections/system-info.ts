@@ -17,14 +17,14 @@ export function getSystemInfoSection(cwd: string): string {
 
 	const details = `====
 
-SYSTEM INFORMATION
+系统信息
 
-Operating System: ${osInfo}
-Default Shell: ${getShell()}
-Home Directory: ${os.homedir().toPosix()}
-Current Workspace Directory: ${cwd.toPosix()}
+操作系统：${osInfo}
+默认 Shell：${getShell()}
+主目录：${os.homedir().toPosix()}
+当前工作区目录：${cwd.toPosix()}
 
-The Current Workspace Directory is the active VS Code project directory, and is therefore the default directory for all tool operations. New terminals will be created in the current workspace directory, however if you change directories in a terminal it will then have a different working directory; changing directories in a terminal does not modify the workspace directory, because you do not have access to change the workspace directory. When the user initially gives you a task, a recursive list of all filepaths in the current workspace directory ('/test/path') will be included in environment_details. This provides an overview of the project's file structure, offering key insights into the project from directory/file names (how developers conceptualize and organize their code) and file extensions (the language used). This can also guide decision-making on which files to explore further. If you need to further explore directories such as outside the current workspace directory, you can use the list_files tool. If you pass 'true' for the recursive parameter, it will list files recursively. Otherwise, it will list files at the top level, which is better suited for generic directories where you don't necessarily need the nested structure, like the Desktop.`
+当前工作区目录是活动的 VS Code 项目目录，因此是所有工具操作的默认目录。新的终端将在当前工作区目录中创建，但是如果你在终端中切换目录，它将有一个不同的工作目录；在终端中切换目录不会修改工作区目录，因为你没有权限修改工作区目录。当用户最初给你一个任务时，当前工作区目录（'/test/path'）中所有文件路径的递归列表将包含在 environment_details 中。这提供了项目文件结构的概览，通过目录/文件名（开发者如何概念化和组织其代码）和文件扩展名（使用的语言）提供了关键洞察。这也可以指导决定进一步探索哪些文件。如果你需要进一步探索当前工作区目录之外的目录，可以使用 list_files 工具。如果你为 recursive 参数传递 'true'，它将递归列出文件。否则，它将仅列出顶层内容，这更适合通用目录，比如桌面，你不需要嵌套结构。`
 
 	return details
 }

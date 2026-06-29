@@ -40,65 +40,65 @@ export async function getSkillsSection(
 
 	return `====
 
-AVAILABLE SKILLS
+可用技能
 
 <available_skills>
 ${skillsXml}
 </available_skills>
 
 <mandatory_skill_check>
-REQUIRED PRECONDITION
+必要前提条件
 
-Before producing ANY user-facing response, you MUST perform a skill applicability check.
+在生成任何面向用户的响应之前，你必须执行技能适用性检查。
 
-Step 1: Skill Evaluation
-- Evaluate the user's request against ALL available skill <description> entries in <available_skills>.
-- Determine whether at least one skill clearly and unambiguously applies.
+第1步：技能评估
+- 对照 <available_skills> 中所有可用技能的 <description> 项评估用户的请求。
+- 确定是否至少有一个技能明确且毫不含糊地适用。
 
-Step 2: Branching Decision
+第2步：分支决策
 
 <if_skill_applies>
-- Select EXACTLY ONE skill.
-- Prefer the most specific skill when multiple skills match.
-- Use the skill tool to load the skill by name.
-- Load the skill's instructions fully into context BEFORE continuing.
-- Follow the skill instructions precisely.
-- Do NOT respond outside the skill-defined flow.
+- 恰好选择一个技能。
+- 当多个技能匹配时，优先选择最具体的技能。
+- 使用 skill 工具按名称加载技能。
+- 在继续之前将技能的指令完全加载到上下文中。
+- 精确遵循技能指令。
+- 不要在技能定义的流程之外进行响应。
 </if_skill_applies>
 
 <if_no_skill_applies>
-- Proceed with a normal response.
-- Do NOT load any SKILL.md files.
+- 继续进行正常响应。
+- 不要加载任何 SKILL.md 文件。
 </if_no_skill_applies>
 
-CONSTRAINTS:
-- Do NOT load every skill up front.
-- Load skills ONLY after a skill is selected.
-- Do NOT reload a skill whose instructions already appear in this conversation.
-- Do NOT skip this check.
-- FAILURE to perform this check is an error.
+约束：
+- 不要提前加载所有技能。
+- 只有在选择技能后才加载技能。
+- 不要重新加载其指令已出现在此对话中的技能。
+- 不要跳过此检查。
+- 未能执行此检查是一个错误。
 </mandatory_skill_check>
 
 <linked_file_handling>
-- When a skill is loaded, ONLY the skill instructions are present.
-- Files linked from the skill are NOT loaded automatically.
-- The model MUST explicitly decide to read a linked file based on task relevance.
-- Do NOT assume the contents of linked files unless they have been explicitly read.
-- Prefer reading the minimum necessary linked file.
-- Avoid reading multiple linked files unless required.
-- Treat linked files as progressive disclosure, not mandatory context.
+- 当技能被加载时，只有技能指令被呈现。
+- 技能中链接的文件不会自动加载。
+- 模型必须根据任务相关性明确决定读取链接的文件。
+- 除非已明确读取，否则不要假设链接文件的内容。
+- 优先阅读最少必要的链接文件。
+- 避免读取多个链接文件，除非必要。
+- 将链接文件视为渐进式披露，而非强制性上下文。
 </linked_file_handling>
 
 <context_notes>
-- The skill list is already filtered for the current mode: "${currentMode}".
-- Mode-specific skills may come from skills-${currentMode}/ with project-level overrides taking precedence over global skills.
+- 技能列表已针对当前模式"${currentMode}"进行了过滤。
+- 特定模式的技能可能来自 skills-${currentMode}/，项目级覆盖优先于全局技能。
 </context_notes>
 
 <internal_verification>
-This section is for internal control only.
-Do NOT include this section in user-facing output.
+本节仅供内部控制使用。
+不要将此节包含在面向用户的输出中。
 
-After completing the evaluation, internally confirm:
+完成评估后，内部确认：
 <skill_check_completed>true|false</skill_check_completed>
 </internal_verification>
 `

@@ -13,8 +13,8 @@ describe("createReadFileTool", () => {
 			const tool = createReadFileTool()
 			const description = getFunctionDef(tool).description
 
-			expect(description).toContain("exactly one file per call")
-			expect(description).toContain("multiple parallel read_file calls")
+			expect(description).toContain("此工具每次调用只读取一个文件")
+			expect(description).toContain("多个并行的 read_file 调用")
 		})
 	})
 

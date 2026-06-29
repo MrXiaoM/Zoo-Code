@@ -529,11 +529,11 @@ describe("addCustomInstructions", () => {
 			{ language: "es" },
 		)
 
-		expect(result).toContain("Language Preference:")
+		expect(result).toContain("语言偏好：")
 		expect(result).toContain("Español") // Check for language name
-		expect(result).toContain("(es)") // Check for language code in parentheses
-		expect(result).toContain("Global Instructions:\nglobal instructions")
-		expect(result).toContain("Mode-specific Instructions:\nmode instructions")
+		expect(result).toContain("（es）") // Check for language code in parentheses
+		expect(result).toContain("全局指令：\nglobal instructions")
+		expect(result).toContain("模式特定指令：\nmode instructions")
 		expect(result).toContain("Rules from .roorules-test-mode:\nmode specific rules")
 	})
 
@@ -665,8 +665,8 @@ describe("addCustomInstructions", () => {
 			},
 		)
 
-		expect(result).toContain("Global Instructions:\nglobal instructions")
-		expect(result).toContain("Mode-specific Instructions:\nmode instructions")
+		expect(result).toContain("全局指令：\nglobal instructions")
+		expect(result).toContain("模式特定指令：\nmode instructions")
 		expect(result).not.toContain("# Agent Rules Standard (AGENTS.md):")
 	})
 
@@ -956,8 +956,8 @@ describe("addCustomInstructions", () => {
 			"test-mode",
 		)
 
-		expect(result).toContain("Global Instructions:")
-		expect(result).toContain("Mode-specific Instructions:")
+		expect(result).toContain("全局指令：")
+		expect(result).toContain("模式特定指令：")
 		expect(result).not.toContain("Rules from .clinerules-test-mode")
 	})
 
@@ -975,9 +975,9 @@ describe("addCustomInstructions", () => {
 			{ language: "xyz" }, // Unknown language code
 		)
 
-		expect(result).toContain("Language Preference:")
-		expect(result).toContain('"xyz" (xyz) language') // For unknown codes, the code is used as the name too
-		expect(result).toContain("Global Instructions:\nglobal instructions")
+		expect(result).toContain("语言偏好：")
+		expect(result).toContain('"xyz"（xyz）语言') // For unknown codes, the code is used as the name too
+		expect(result).toContain("全局指令：\nglobal instructions")
 	})
 
 	it("should throw on unexpected errors", async () => {
@@ -1011,8 +1011,8 @@ describe("addCustomInstructions", () => {
 			"test-mode",
 		)
 
-		expect(result).toContain("Global Instructions:\nglobal instructions")
-		expect(result).toContain("Mode-specific Instructions:\nmode instructions")
+		expect(result).toContain("全局指令：\nglobal instructions")
+		expect(result).toContain("模式特定指令：\nmode instructions")
 		expect(result).not.toContain("Rules from .clinerules-test-mode")
 	})
 

@@ -1,7 +1,7 @@
 export function getSharedToolUseSection(): string {
 	return `====
 
-TOOL USE
+工具使用
 
-You have access to a set of tools that are executed upon the user's approval. Use the provider-native tool-calling mechanism. Do not include XML markup or examples. You must call at least one tool per assistant response. Prefer calling as many tools as are reasonably needed in a single response to reduce back-and-forth and complete tasks faster.`
+你可以使用一组工具，这些工具在用户批准后执行。使用提供商原生的工具调用机制。不要包含 XML 标记或示例。你必须在每个助手响应中至少调用一个工具。优先在单次响应中调用尽可能多的合理需要的工具，以减少往返并更快地完成任务。`
 }

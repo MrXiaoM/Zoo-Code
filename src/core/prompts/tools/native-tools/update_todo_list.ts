@@ -1,37 +1,37 @@
 import type OpenAI from "openai"
 
-const UPDATE_TODO_LIST_DESCRIPTION = `Replace the entire TODO list with an updated checklist reflecting the current state. Always provide the full list; the system will overwrite the previous one. This tool is designed for step-by-step task tracking, allowing you to confirm completion of each step before updating, update multiple task statuses at once (e.g., mark one as completed and start the next), and dynamically add new todos discovered during long or complex tasks.
+const UPDATE_TODO_LIST_DESCRIPTION = `用反映当前状态的更新清单替换整个 TODO 列表。始终提供完整列表；系统将覆盖先前的列表。此工具旨在进行逐步任务跟踪，允许你在更新前确认每步已完成，一次性更新多个任务状态（例如将一个标记为已完成并开始下一个），以及在长时间或复杂任务期间动态添加新发现的待办事项。
 
-Checklist Format:
-- Use a single-level markdown checklist (no nesting or subtasks)
-- List todos in the intended execution order
-- Status options: [ ] (pending), [x] (completed), [-] (in progress)
+清单格式：
+- 使用单级 markdown 清单（无嵌套或子任务）
+- 按预期执行顺序列出待办事项
+- 状态选项：[ ]（待处理）、[x]（已完成）、[-]（进行中）
 
-Core Principles:
-- Before updating, always confirm which todos have been completed
-- You may update multiple statuses in a single update
-- Add new actionable items as they're discovered
-- Only mark a task as completed when fully accomplished
-- Keep all unfinished tasks unless explicitly instructed to remove
+核心原则：
+- 在更新前，始终确认哪些待办事项已完成
+- 你可以在单次更新中更新多个状态
+- 发现新的可执行项时即时添加
+- 只有在完全完成后才将任务标记为已完成
+- 保留所有未完成的任务，除非明确指示移除
 
-Example: Initial task list
-{ "todos": "[x] Analyze requirements\\n[x] Design architecture\\n[-] Implement core logic\\n[ ] Write tests\\n[ ] Update documentation" }
+示例：初始任务列表
+{ "todos": "[x] 分析需求\\n[x] 设计架构\\n[-] 实现核心逻辑\\n[ ] 编写测试\\n[ ] 更新文档" }
 
-Example: After completing implementation
-{ "todos": "[x] Analyze requirements\\n[x] Design architecture\\n[x] Implement core logic\\n[-] Write tests\\n[ ] Update documentation\\n[ ] Add performance benchmarks" }
+示例：完成实现后
+{ "todos": "[x] 分析需求\\n[x] 设计架构\\n[x] 实现核心逻辑\\n[-] 编写测试\\n[ ] 更新文档\\n[ ] 添加性能基准" }
 
-When to Use:
-- Task involves multiple steps or requires ongoing tracking
-- Need to update status of several todos at once
-- New actionable items are discovered during execution
-- Task is complex and benefits from stepwise progress tracking
+何时使用：
+- 任务涉及多个步骤或需要持续跟踪
+- 需要一次性更新多个待办事项的状态
+- 在执行过程中发现新的可执行项
+- 任务复杂且受益于逐步进度跟踪
 
-When NOT to Use:
-- Only a single, trivial task
-- Task can be completed in one or two simple steps
-- Request is purely conversational or informational`
+何时不使用：
+- 只有一个单一的简单任务
+- 任务可以在一两个简单步骤内完成
+- 请求纯粹是对话或信息性的`
 
-const TODOS_PARAMETER_DESCRIPTION = `Full markdown checklist in execution order, using [ ] for pending, [x] for completed, and [-] for in progress`
+const TODOS_PARAMETER_DESCRIPTION = `按执行顺序排列的完整 markdown 清单，使用 [ ] 表示待处理，[x] 表示已完成，[-] 表示进行中`
 
 export default {
 	type: "function",

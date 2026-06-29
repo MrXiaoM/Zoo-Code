@@ -3,7 +3,7 @@ type PromptParams = Record<string, string | any[]>
 
 const generateDiagnosticText = (diagnostics?: any[]) => {
 	if (!diagnostics?.length) return ""
-	return `\nCurrent problems detected:\n${diagnostics
+	return `\n当前检测到的问题：\n${diagnostics
 		.map((d) => `- [${d.source || "Error"}] ${d.message}${d.code ? ` (${d.code})` : ""}`)
 		.join("\n")}`
 }
@@ -47,130 +47,130 @@ type SupportPromptType =
 
 const supportPromptConfigs: Record<SupportPromptType, SupportPromptConfig> = {
 	ENHANCE: {
-		template: `Generate an enhanced version of this prompt (reply with only the enhanced prompt - no conversation, explanations, lead-in, bullet points, placeholders, or surrounding quotes):
+		template: `生成此提示词的增强版本（仅回复增强后的提示词——不要包含对话、解释、引言、要点、占位符或引号）：
 
 \${userInput}`,
 	},
 	CONDENSE: {
-		template: `CRITICAL: This summarization request is a SYSTEM OPERATION, not a user message.
-When analyzing "user requests" and "user intent", completely EXCLUDE this summarization message.
-The "most recent user request" and "Optional Next Step" must be based on what the user was doing BEFORE this system message appeared.
-The goal is for work to continue seamlessly after condensation - as if it never happened.
+		template: `关键：此摘要请求是一个系统操作，不是用户消息。
+在分析"用户请求"和"用户意图"时，请完全排除此摘要消息。
+"最近的用户请求"和"可选下一步"必须基于在此系统消息出现之前用户正在做的事情。
+目标是让工作在压缩后无缝继续——就好像压缩从未发生过一样。
 
-Your task is to create a detailed summary of the conversation so far, paying close attention to the user's explicit requests and your previous actions.
-This summary should be thorough in capturing technical details, code patterns, and architectural decisions that would be essential for continuing development work without losing context.
+你的任务是创建对话迄今的详细摘要，密切注意用户的明确请求和你之前的操作。
+此摘要应详尽捕捉技术细节、代码模式以及对于继续开发工作而不丢失上下文至关重要的架构决策。
 
-Before providing your final summary, wrap your analysis in <analysis> tags to organize your thoughts and ensure you've covered all necessary points. In your analysis process:
+在提供最终摘要之前，请在 <analysis> 标签中组织你的思路，以确保你已涵盖所有必要要点。在你的分析过程中：
 
-1. Chronologically analyze each message and section of the conversation. For each section thoroughly identify:
-   - The user's explicit requests and intents
-   - Your approach to addressing the user's requests
-   - Key decisions, technical concepts and code patterns
-   - Specific details like:
-     - file names
-     - full code snippets
-     - function signatures
-     - file edits
-   - Errors that you ran into and how you fixed them
-   - Pay special attention to specific user feedback that you received, especially if the user told you to do something differently.
-2. Double-check for technical accuracy and completeness, addressing each required element thoroughly.
-			
-			Your summary should include the following sections:
+1. 按时间顺序分析对话的每条消息和每个部分。对每个部分彻底识别：
+   - 用户的明确请求和意图
+   - 你处理用户请求的方法
+   - 关键决策、技术概念和代码模式
+   - 具体细节如：
+     - 文件名
+     - 完整代码片段
+     - 函数签名
+     - 文件编辑
+   - 你遇到的错误及其修复方式
+   - 特别注意你收到的特定用户反馈，特别是如果用户告诉你要做不同的事情。
+2. 仔细检查技术准确性和完整性，全面处理每个必需元素。
 
-1. Primary Request and Intent: Capture all of the user's explicit requests and intents in detail
-2. Key Technical Concepts: List all important technical concepts, technologies, and frameworks discussed.
-3. Files and Code Sections: Enumerate specific files and code sections examined, modified, or created. Pay special attention to the most recent messages and include full code snippets where applicable and include a summary of why this file read or edit is important.
-4. Errors and fixes: List all errors that you ran into, and how you fixed them. Pay special attention to specific user feedback that you received, especially if the user told you to do something differently.
-			5. Problem Solving: Document problems solved and any ongoing troubleshooting efforts.
-			6. All user messages: List ALL user messages that are not tool results. These are critical for understanding the users' feedback and changing intent.
-			7. Pending Tasks: Outline any pending tasks that you have explicitly been asked to work on.
-			8. Current Work: Describe in detail precisely what was being worked on immediately before this summary request, paying special attention to the most recent messages from both user and assistant. Include file names and code snippets where applicable.
-			9. Optional Next Step: List the next step that you will take that is related to the most recent work you were doing. IMPORTANT: ensure that this step is DIRECTLY in line with the user's most recent explicit requests, and the task you were working on immediately before this summary request. If your last task was concluded, then only list next steps if they are explicitly in line with the users request. Do not start on tangential requests or really old requests that were already completed without confirming with the user first.
+你的摘要应包括以下部分：
 
-If there is a next step, include direct quotes from the most recent conversation showing exactly what task you were working on and where you left off. This should be verbatim to ensure there's no drift in task interpretation.
+1. 主要请求和意图：详细记录用户的所有明确请求和意图
+2. 关键技术概念：列出讨论过的所有重要技术概念、技术和框架。
+3. 文件和代码部分：列举被检查、修改或创建的特定文件和代码部分。特别注意最近的消息，并在适用时包含完整代码片段，同时说明为什么此文件阅读或编辑很重要。
+4. 错误和修复：列出你遇到的所有错误及其修复方式。特别注意你收到的特定用户反馈，特别是如果用户告诉你要做不同的事情。
+5. 问题解决：记录已解决的问题和任何正在进行的故障排除工作。
+6. 所有用户消息：列出所有不是工具结果的用户消息。这些对于理解用户的反馈和变化的意图至关重要。
+7. 待处理任务：概述你被明确要求处理的任何待处理任务。
+8. 当前工作：详细描述在此摘要请求之前正在进行的确切工作，特别注意最近来自用户和助手双方的消息。在适用时包含文件名和代码片段。
+9. 可选下一步：列出与你最近正在进行的工作相关的下一步。重要：确保此步骤直接符合用户最近的明确请求，以及你在此摘要请求之前正在进行的工作。如果你的上一个任务已经结束，那么只有在步骤与用户的请求明确对齐时才列出它们。不要在没有与用户确认的情况下开始不相关的请求或非常久远的已完成请求。
 
-Here's an example of how your output should be structured:
+如果有下一步，包含最近对话中显示你正在处理的确切任务以及你停止在哪里的直接引用。这应该是逐字引用的，以确保任务解释中没有偏差。
+
+以下是你输出结构的示例：
 
 <example>
 <analysis>
-[Your thought process, ensuring all points are covered thoroughly and accurately]
+[你的思维过程，确保所有要点都得到彻底和准确的覆盖]
 </analysis>
 
 <summary>
-1. Primary Request and Intent:
-   [Detailed description]
+1. 主要请求和意图：
+   [详细描述]
 
-2. Key Technical Concepts:
-   - [Concept 1]
-   - [Concept 2]
+2. 关键技术概念：
+   - [概念 1]
+   - [概念 2]
    - [...]
 
-3. Files and Code Sections:
-   - [File Name 1]
-      - [Summary of why this file is important]
-      - [Summary of the changes made to this file, if any]
-      - [Important Code Snippet]
-   - [File Name 2]
-      - [Important Code Snippet]
+3. 文件和代码部分：
+   - [文件名 1]
+      - [此文件为何重要的摘要]
+      - [对此文件所做更改的摘要，如有]
+      - [重要的代码片段]
+   - [文件名 2]
+      - [重要的代码片段]
    - [...]
 
-4. Errors and fixes:
-   - [Detailed description of error 1]:
-      - [How you fixed the error]
-      - [User feedback on the error if any]
+4. 错误和修复：
+   - [错误 1 的详细描述]：
+      - [你如何修复错误]
+      - [关于此错误的用户反馈，如有]
    - [...]
 
-5. Problem Solving:
-   [Description of solved problems and ongoing troubleshooting]
+5. 问题解决：
+   [已解决问题的描述和正在进行的故障排除]
 
-			6. All user messages:
-			   - [Detailed non tool use user message]
-			   - [...]
-			
-			7. Pending Tasks:
-			   - [Task 1]
-			   - [Task 2]
-			   - [...]
-			
-			8. Current Work:
-			   [Precise description of current work]
-			
-			9. Optional Next Step:
-			   [Optional Next step to take]
+6. 所有用户消息：
+   - [详细的非工具使用用户消息]
+   - [...]
+
+7. 待处理任务：
+   - [任务 1]
+   - [任务 2]
+   - [...]
+
+8. 当前工作：
+   [当前工作的精确描述]
+
+9. 可选下一步：
+   [可选的要采取的下一步]
 
 </summary>
 </example>
 
-Please provide your summary based on the conversation so far, following this structure and ensuring precision and thoroughness in your response.
+请基于迄今的对话提供你的摘要，遵循此结构并确保在回复中保持精确和彻底。
 
-Note: Any <command> blocks from the original task will be automatically appended to your summary wrapped in <system-reminder> tags. You do not need to include them in your summary text.
+注意：原始任务中的任何 <command> 块将自动附加到你的摘要中，包装在 <system-reminder> 标签内。你不需要将它们包含在你的摘要文本中。
 
-There may be additional summarization instructions provided in the included context. If so, remember to follow these instructions when creating the above summary. Examples of instructions include:
+在包含的上下文中可能提供了额外的摘要指示。如果是这样，请记住在创建上述摘要时遵循这些指示。指示示例包括：
 <example>
-## Compact Instructions
-When summarizing the conversation focus on typescript code changes and also remember the mistakes you made and how you fixed them.
+## 紧凑指示
+在总结对话时，专注于 TypeScript 代码更改，并记住你犯的错误以及你是如何修复它们的。
 </example>
 
 <example>
-# Summary instructions
-When you are using compact - please focus on test output and code changes. Include file reads verbatim.
+# 摘要指示
+当使用压缩时——请专注于测试输出和代码更改。逐字包含文件读取。
 </example>`,
 	},
 	EXPLAIN: {
-		template: `Explain the following code from file path \${filePath}:\${startLine}-\${endLine}
+		template: `解释来自文件路径 \${filePath}:\${startLine}-\${endLine} 的以下代码
 \${userInput}
 
 \`\`\`
 \${selectedText}
 \`\`\`
 
-Please provide a clear and concise explanation of what this code does, including:
-1. The purpose and functionality
-2. Key components and their interactions
-3. Important patterns or techniques used`,
+请提供此代码功能的清晰简洁的解释，包括：
+1. 目的和功能
+2. 关键组件及其交互
+3. 使用的重要模式或技术`,
 	},
 	FIX: {
-		template: `Fix any issues in the following code from file path \${filePath}:\${startLine}-\${endLine}
+		template: `修复来自文件路径 \${filePath}:\${startLine}-\${endLine} 的以下代码中的任何问题
 \${diagnosticText}
 \${userInput}
 
@@ -178,27 +178,27 @@ Please provide a clear and concise explanation of what this code does, including
 \${selectedText}
 \`\`\`
 
-Please:
-1. Address all detected problems listed above (if any)
-2. Identify any other potential bugs or issues
-3. Provide corrected code
-4. Explain what was fixed and why`,
+请：
+1. 解决上面列出的所有检测到的问题（如有）
+2. 识别任何其他潜在的 bug 或问题
+3. 提供修正后的代码
+4. 解释修复了什么以及为什么`,
 	},
 	IMPROVE: {
-		template: `Improve the following code from file path \${filePath}:\${startLine}-\${endLine}
+		template: `改进来自文件路径 \${filePath}:\${startLine}-\${endLine} 的以下代码
 \${userInput}
 
 \`\`\`
 \${selectedText}
 \`\`\`
 
-Please suggest improvements for:
-1. Code readability and maintainability
-2. Performance optimization
-3. Best practices and patterns
-4. Error handling and edge cases
+请建议以下改进：
+1. 代码可读性和可维护性
+2. 性能优化
+3. 最佳实践和模式
+4. 错误处理和边界情况
 
-Provide the improved code along with explanations for each enhancement.`,
+提供改进后的代码以及每项增强的解释。`,
 	},
 	ADD_TO_CONTEXT: {
 		template: `\${filePath}:\${startLine}-\${endLine}
@@ -208,34 +208,34 @@ Provide the improved code along with explanations for each enhancement.`,
 	},
 	TERMINAL_ADD_TO_CONTEXT: {
 		template: `\${userInput}
-Terminal output:
+终端输出：
 \`\`\`
 \${terminalContent}
 \`\`\``,
 	},
 	TERMINAL_FIX: {
 		template: `\${userInput}
-Fix this terminal command:
+修复此终端命令：
 \`\`\`
 \${terminalContent}
 \`\`\`
 
-Please:
-1. Identify any issues in the command
-2. Provide the corrected command
-3. Explain what was fixed and why`,
+请：
+1. 识别命令中的任何问题
+2. 提供修正后的命令
+3. 解释修复了什么以及为什么`,
 	},
 	TERMINAL_EXPLAIN: {
 		template: `\${userInput}
-Explain this terminal command:
+解释此终端命令：
 \`\`\`
 \${terminalContent}
 \`\`\`
 
-Please provide:
-1. What the command does
-2. Explanation of each part/flag
-3. Expected output and behavior`,
+请提供：
+1. 命令的作用
+2. 每个部分/标志的解释
+3. 预期的输出和行为`,
 	},
 	NEW_TASK: {
 		template: `\${userInput}`,

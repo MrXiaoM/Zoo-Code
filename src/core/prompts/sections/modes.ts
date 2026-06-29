@@ -14,20 +14,20 @@ export async function getModesSection(context: vscode.ExtensionContext): Promise
 
 	const modesContent = `====
 
-MODES
+模式
 
-- These are the currently available modes:
+- 这些是当前可用的模式：
 ${allModes
 	.map((mode: ModeConfig) => {
 		let description: string
 		if (mode.whenToUse && mode.whenToUse.trim() !== "") {
-			// Use whenToUse as the primary description, indenting subsequent lines for readability
+			// 使用 whenToUse 作为主要描述，缩进后续行以提高可读性
 			description = mode.whenToUse.replace(/\n/g, "\n    ")
 		} else {
-			// Fallback to the first sentence of roleDefinition if whenToUse is not available
+			// 如果 whenToUse 不可用，回退到 roleDefinition 的第一句话
 			description = mode.roleDefinition.split(".")[0]
 		}
-		return `  * "${mode.name}" mode (${mode.slug}) - ${description}`
+		return `  * "${mode.name}" 模式 (${mode.slug}) - ${description}`
 	})
 	.join("\n")}`
 

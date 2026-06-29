@@ -28,31 +28,31 @@ describe("getSystemInfoSection", () => {
 		vi.clearAllMocks()
 	})
 
-	it("should return system info with os-name when available", () => {
+	it("当 os-name 可用时应返回系统信息", () => {
 		mockOsName.mockReturnValue("Ubuntu 22.04")
 
 		const result = getSystemInfoSection(mockCwd)
 
-		expect(result).toContain("Operating System: Ubuntu 22.04")
-		expect(result).toContain("Default Shell: /bin/bash")
-		expect(result).toContain(`Home Directory: ${mockHomeDir}`)
-		expect(result).toContain(`Current Workspace Directory: ${mockCwd}`)
+		expect(result).toContain("操作系统：Ubuntu 22.04")
+		expect(result).toContain("默认 Shell：/bin/bash")
+		expect(result).toContain(`主目录：${mockHomeDir}`)
+		expect(result).toContain(`当前工作区目录：${mockCwd}`)
 	})
 
-	it("should fallback to platform and release when os-name throws error", () => {
+	it("当 os-name 抛出错误时应回退到 platform 和 release", () => {
 		mockOsName.mockImplementation(() => {
 			throw new Error("Command failed with ENOENT: powershell")
 		})
 
 		const result = getSystemInfoSection(mockCwd)
 
-		expect(result).toContain("Operating System: linux 5.15.0")
-		expect(result).toContain("Default Shell: /bin/bash")
-		expect(result).toContain(`Home Directory: ${mockHomeDir}`)
-		expect(result).toContain(`Current Workspace Directory: ${mockCwd}`)
+		expect(result).toContain("操作系统：linux 5.15.0")
+		expect(result).toContain("默认 Shell：/bin/bash")
+		expect(result).toContain(`主目录：${mockHomeDir}`)
+		expect(result).toContain(`当前工作区目录：${mockCwd}`)
 	})
 
-	it("should handle Windows platform in fallback", () => {
+	it("应在回退中处理 Windows 平台", () => {
 		mockOsName.mockImplementation(() => {
 			throw new Error("Command failed with ENOENT: powershell")
 		})
@@ -61,6 +61,6 @@ describe("getSystemInfoSection", () => {
 
 		const result = getSystemInfoSection(mockCwd)
 
-		expect(result).toContain("Operating System: win32 10.0.19043")
+		expect(result).toContain("操作系统：win32 10.0.19043")
 	})
 })

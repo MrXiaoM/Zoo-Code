@@ -1,19 +1,19 @@
 import type OpenAI from "openai"
 
-const WRITE_TO_FILE_DESCRIPTION = `Request to write content to a file. This tool is primarily used for creating new files or for scenarios where a complete rewrite of an existing file is intentionally required. If the file exists, it will be overwritten. If it doesn't exist, it will be created. This tool will automatically create any directories needed to write the file.
+const WRITE_TO_FILE_DESCRIPTION = `请求将内容写入文件。此工具主要用于创建新文件或需要有意完全重写现有文件的场景。如果文件存在，它将被覆盖。如果不存在，它将被创建。此工具将自动创建写入文件所需的任何目录。
 
-**Important:** You should prefer using other editing tools over write_to_file when making changes to existing files, since write_to_file is slower and cannot handle large files. Use write_to_file primarily for new file creation.
+**重要：** 在修改现有文件时，你应该优先使用其他编辑工具而不是 write_to_file，因为 write_to_file 较慢且无法处理大文件。write_to_file 主要用于创建新文件。
 
-When using this tool, use it directly with the desired content. You do not need to display the content before using the tool. ALWAYS provide the COMPLETE file content in your response. This is NON-NEGOTIABLE. Partial updates or placeholders like '// rest of code unchanged' are STRICTLY FORBIDDEN. Failure to do so will result in incomplete or broken code.
+使用此工具时，直接使用所需的内容。你不需要在使用工具前显示内容。始终在你的响应中提供完整的文件内容。这是不可协商的。部分更新或占位符如 '// rest of code unchanged' 被严格禁止。不这样做将导致不完整或损坏的代码。
 
-When creating a new project, organize all new files within a dedicated project directory unless the user specifies otherwise. Structure the project logically, adhering to best practices for the specific type of project being created.
+创建新项目时，除非用户另有指定，否则将所有新文件组织在专用项目目录中。按照逻辑结构项目，遵循所创建项目类型的最佳实践。
 
-Example: Writing a configuration file
+示例：写入配置文件
 { "path": "frontend-config.json", "content": "{\\n  \\"apiEndpoint\\": \\"https://api.example.com\\",\\n  \\"theme\\": {\\n    \\"primaryColor\\": \\"#007bff\\"\\n  }\\n}" }`
 
-const PATH_PARAMETER_DESCRIPTION = `The path of the file to write to (relative to the current workspace directory)`
+const PATH_PARAMETER_DESCRIPTION = `要写入的文件路径（相对于当前工作区目录）`
 
-const CONTENT_PARAMETER_DESCRIPTION = `The content to write to the file. ALWAYS provide the COMPLETE intended content of the file, without any truncation or omissions. You MUST include ALL parts of the file, even if they haven't been modified. Do NOT include line numbers in the content.`
+const CONTENT_PARAMETER_DESCRIPTION = `要写入文件的内容。始终提供文件的完整预期内容，不得截断或省略。你必须包含文件的所有部分，即使它们未被修改。不要包含行号。`
 
 export default {
 	type: "function",

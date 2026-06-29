@@ -1,20 +1,20 @@
 import type OpenAI from "openai"
 
-const ACCESS_MCP_RESOURCE_DESCRIPTION = `Request to access a resource provided by a connected MCP server. Resources represent data sources that can be used as context, such as files, API responses, or system information.
+const ACCESS_MCP_RESOURCE_DESCRIPTION = `请求访问由连接的 MCP 服务器提供的资源。资源代表可以用作上下文的数据源，例如文件、API 响应或系统信息。
 
-Parameters:
-- server_name: (required) The name of the MCP server providing the resource
-- uri: (required) The URI identifying the specific resource to access
+参数：
+- server_name：（必需）提供资源的 MCP 服务器的名称
+- uri：（必需）标识要访问的特定资源的 URI
 
-Example: Accessing a weather resource
+示例：访问天气资源
 { "server_name": "weather-server", "uri": "weather://san-francisco/current" }
 
-Example: Accessing a file resource from an MCP server
+示例：从 MCP 服务器访问文件资源
 { "server_name": "filesystem-server", "uri": "file:///path/to/data.json" }`
 
-const SERVER_NAME_PARAMETER_DESCRIPTION = `The name of the MCP server providing the resource`
+const SERVER_NAME_PARAMETER_DESCRIPTION = `提供资源的 MCP 服务器的名称`
 
-const URI_PARAMETER_DESCRIPTION = `The URI identifying the specific resource to access`
+const URI_PARAMETER_DESCRIPTION = `标识要访问的特定资源的 URI`
 
 export default {
 	type: "function",

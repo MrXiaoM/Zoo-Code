@@ -1,29 +1,29 @@
 import type OpenAI from "openai"
 
-const EXECUTE_COMMAND_DESCRIPTION = `Request to execute a CLI command on the system. Use this when you need to perform system operations or run specific commands to accomplish any step in the user's task. You must tailor your command to the user's system and provide a clear explanation of what the command does. For command chaining, use the appropriate chaining syntax for the user's shell. Prefer to execute complex CLI commands over creating executable scripts, as they are more flexible and easier to run. Prefer relative commands and paths that avoid location sensitivity for terminal consistency.
+const EXECUTE_COMMAND_DESCRIPTION = `请求在系统上执行 CLI 命令。当你需要执行系统操作或运行特定命令来完成用户任务的任何步骤时使用此工具。你必须根据用户的系统定制命令，并清楚地解释该命令的作用。对于命令链，请使用适合用户 Shell 的链接语法。优先执行复杂的 CLI 命令而不是创建可执行脚本，因为它们更灵活且更容易运行。优先使用相对命令和路径，以避免位置敏感性，保持终端一致性。
 
-Parameters:
-- command: (required) The CLI command to execute. This should be valid for the current operating system. Ensure the command is properly formatted and does not contain any harmful instructions.
-- cwd: (optional) The working directory to execute the command in
-- timeout: (optional) Timeout in seconds. When exceeded, the command keeps running in the background and you receive the output so far. Set this for commands that may run indefinitely, such as dev servers or file watchers, so you can proceed without waiting for them to exit.
+参数：
+- command：（必需）要执行的 CLI 命令。此命令应对当前操作系统有效。确保命令格式正确且不包含任何有害指令。
+- cwd：（可选）执行命令的工作目录
+- timeout：（可选）超时时间（秒）。超时后，命令继续在后台运行，你可以收到目前为止的输出。对于可能无限期运行的命令（如开发服务器或文件监视器）设置此项，以便你无需等待它们退出即可继续。
 
-Example: Executing npm run dev
+示例：执行 npm run dev
 { "command": "npm run dev", "cwd": null, "timeout": null }
 
-Example: Executing ls in a specific directory if directed
+示例：在指定目录中执行 ls
 { "command": "ls -la", "cwd": "/home/user/projects", "timeout": null }
 
-Example: Using relative paths
+示例：使用相对路径
 { "command": "touch ./testdata/example.file", "cwd": null, "timeout": null }
 
-Example: Running a build with a timeout
+示例：带超时的构建运行
 { "command": "npm run build", "cwd": null, "timeout": 30 }`
 
-const COMMAND_PARAMETER_DESCRIPTION = `Shell command to execute`
+const COMMAND_PARAMETER_DESCRIPTION = `要执行的 Shell 命令`
 
-const CWD_PARAMETER_DESCRIPTION = `Optional working directory for the command, relative or absolute`
+const CWD_PARAMETER_DESCRIPTION = `命令的可选工作目录，相对或绝对路径`
 
-const TIMEOUT_PARAMETER_DESCRIPTION = `Timeout in seconds. When exceeded, the command continues running in the background and output collected so far is returned. Use this for long-running processes like dev servers, file watchers, or any command that may not exit on its own`
+const TIMEOUT_PARAMETER_DESCRIPTION = `超时时间（秒）。超时后，命令继续在后台运行，返回目前为止收集的输出。用于长时间运行的进程，如开发服务器、文件监视器或任何可能不会自行退出的命令`
 
 export default {
 	type: "function",

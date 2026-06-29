@@ -1,32 +1,32 @@
 import type OpenAI from "openai"
 
-const apply_patch_DESCRIPTION = `Apply patches to files using a stripped-down, file-oriented diff format. This tool supports creating new files, deleting files, and updating existing files with precise changes.
+const apply_patch_DESCRIPTION = `使用精简的、面向文件的 diff 格式对文件应用补丁。此工具支持创建新文件、删除文件和以精确更改更新现有文件。
 
-The patch format uses a simple, human-readable structure:
+补丁格式使用简单、人类可读的结构：
 
 *** Begin Patch
-[ one or more file sections ]
+[ 一个或多个文件部分 ]
 *** End Patch
 
-Each file section starts with one of three headers:
-- *** Add File: <path> - Create a new file. Every following line is a + line (the initial contents).
-- *** Delete File: <path> - Remove an existing file. Nothing follows.
-- *** Update File: <path> - Patch an existing file in place.
+每个文件部分以以下三种头部之一开头：
+- *** Add File: <path> - 创建新文件。接下来的每一行都是 + 行（初始内容）。
+- *** Delete File: <path> - 删除现有文件。之后无内容。
+- *** Update File: <path> - 就地修补现有文件。
 
-For Update File operations:
-- May be immediately followed by *** Move to: <new path> if you want to rename the file.
-- Then one or more "hunks", each introduced by @@ (optionally followed by context like a class or function name).
-- Within a hunk each line starts with:
-  - ' ' (space) for context lines (unchanged)
-  - '-' for lines to remove
-  - '+' for lines to add
+对于 Update File 操作：
+- 可以紧接着 *** Move to: <new path> 如果要重命名文件。
+- 然后是一个或多个"块"，每个由 @@ 引入（可选地后跟类名或函数名等上下文）。
+- 在块内，每行以：
+  - ' '（空格）开头表示上下文行（未更改）
+  - '-' 开头表示要删除的行
+  - '+' 开头表示要添加的行
 
-Context guidelines:
-- Show 3 lines of code above and below each change.
-- Use @@ with a class/function name if 3 lines of context is insufficient to uniquely identify the location.
-- Multiple @@ statements can be used for deeply nested code.
+上下文指南：
+- 在每个更改上下显示 3 行代码。
+- 如果 3 行上下文不足以唯一标识位置，使用带有类/函数名的 @@。
+- 对于深度嵌套的代码，可以使用多个 @@ 语句。
 
-Example patch:
+示例补丁：
 *** Begin Patch
 *** Add File: hello.txt
 +Hello world
@@ -48,8 +48,7 @@ const apply_patch = {
 			properties: {
 				patch: {
 					type: "string",
-					description:
-						"The complete patch text in the apply_patch format, starting with '*** Begin Patch' and ending with '*** End Patch'.",
+					description: "apply_patch 格式的完整补丁文本，以 '*** Begin Patch' 开头并以 '*** End Patch' 结尾。",
 				},
 			},
 			required: ["patch"],

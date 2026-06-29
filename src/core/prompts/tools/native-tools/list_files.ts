@@ -1,20 +1,20 @@
 import type OpenAI from "openai"
 
-const LIST_FILES_DESCRIPTION = `Request to list files and directories within the specified directory. If recursive is true, it will list all files and directories recursively. If recursive is false or not provided, it will only list the top-level contents. Do not use this tool to confirm the existence of files you may have created, as the user will let you know if the files were created successfully or not.
+const LIST_FILES_DESCRIPTION = `请求列出指定目录中的文件和目录。如果 recursive 为 true，它将递归列出所有文件和目录。如果 recursive 为 false 或未提供，它将仅列出顶层内容。不要使用此工具来确认你可能已创建的文件的存不存在，因为用户会通知你文件是否已成功创建。
 
-Parameters:
-- path: (required) The path of the directory to list contents for (relative to the current workspace directory)
-- recursive: (required) Whether to list files recursively. Use true for recursive listing, false for top-level only.
+参数：
+- path：（必需）要列出内容的目录路径（相对于当前工作区目录）
+- recursive：（必需）是否递归列出文件。true 表示递归列出，false 表示仅列出顶层。
 
-Example: Listing all files in the current directory (top-level only)
+示例：列出当前目录中的所有文件（仅顶层）
 { "path": ".", "recursive": false }
 
-Example: Listing all files recursively in src directory
+示例：递归列出 src 目录中的所有文件
 { "path": "src", "recursive": true }`
 
-const PATH_PARAMETER_DESCRIPTION = `Directory path to inspect, relative to the workspace`
+const PATH_PARAMETER_DESCRIPTION = `要检查的目录路径，相对于工作区`
 
-const RECURSIVE_PARAMETER_DESCRIPTION = `Set true to list contents recursively; false to show only the top level`
+const RECURSIVE_PARAMETER_DESCRIPTION = `设为 true 递归列出内容；false 仅显示顶层`
 
 export default {
 	type: "function",

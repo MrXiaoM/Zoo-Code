@@ -1,9 +1,9 @@
 export function getToolUseGuidelinesSection(): string {
-	return `# Tool Use Guidelines
+	return `# 工具使用指南
 
-1. Assess what information you already have and what information you need to proceed with the task.
-2. Choose the most appropriate tool based on the task and the tool descriptions provided. Assess if you need additional information to proceed, and which of the available tools would be most effective for gathering this information. For example using the list_files tool is more effective than running a command like \`ls\` in the terminal. It's critical that you think about each available tool and use the one that best fits the current step in the task.
-3. If multiple actions are needed, you may use multiple tools in a single message when appropriate, or use tools iteratively across messages. Each tool use should be informed by the results of previous tool uses. Do not assume the outcome of any tool use. Each step must be informed by the previous step's result.
+1. 评估你已经拥有什么信息以及你需要什么信息来继续执行任务。
+2. 根据任务和提供的工具描述选择最合适的工具。评估你是否需要额外信息来继续，以及哪些可用工具对收集这些信息最有效。例如，使用 list_files 工具比在终端中运行 \`ls\` 命令更有效。关键是你要思考每个可用工具，并使用最适合当前任务步骤的那个。
+3. 如果需要多个操作，你可以在适当时在单条消息中使用多个工具，或者在不同消息之间迭代使用工具。每个工具的使用都应基于之前工具使用的结果。不要假设任何工具使用的结果。每个步骤都必须基于上一步的结果。
 
-By carefully considering the user's response after tool executions, you can react accordingly and make informed decisions about how to proceed with the task. This iterative process helps ensure the overall success and accuracy of your work.`
+通过仔细考虑用户在工具执行后的响应，你可以相应地做出反应，并就如何继续任务做出明智的决策。这个迭代过程有助于确保工作的整体成功和准确性。`
 }

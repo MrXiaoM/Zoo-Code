@@ -1,26 +1,26 @@
 import type OpenAI from "openai"
 
-const GENERATE_IMAGE_DESCRIPTION = `Request to generate or edit an image using AI models through OpenRouter API. This tool can create new images from text prompts or modify existing images based on your instructions. When an input image is provided, the AI will apply the requested edits, transformations, or enhancements to that image.
+const GENERATE_IMAGE_DESCRIPTION = `请求使用 AI 模型通过 OpenRouter API 生成或编辑图像。此工具可以从文本提示创建新图像，或根据你的指令修改现有图像。当提供输入图像时，AI 将对图像应用请求的编辑、变换或增强。
 
-Parameters:
-- prompt: (required) The text prompt describing what to generate or how to edit the image
-- path: (required) The file path where the generated/edited image should be saved (relative to the current workspace directory). The tool will automatically add the appropriate image extension if not provided.
-- image: (optional) The file path to an input image to edit or transform (relative to the current workspace directory). Supported formats: PNG, JPG, JPEG, GIF, WEBP.
+参数：
+- prompt：（必需）描述要生成的内容或如何编辑图像的文本提示
+- path：（必需）生成的/编辑的图像应保存到的文件路径（相对于当前工作区目录）。如果未提供，工具将自动添加适当的图像扩展名。
+- image：（可选）要编辑或变换的输入图像的文件路径（相对于当前工作区目录）。支持的格式：PNG、JPG、JPEG、GIF、WEBP。
 
-Example: Generating a sunset image
-{ "prompt": "A beautiful sunset over mountains with vibrant orange and purple colors", "path": "images/sunset.png", "image": null }
+示例：生成日落图像
+{ "prompt": "美丽山峦上空的日落，充满活力的橙色和紫色", "path": "images/sunset.png", "image": null }
 
-Example: Editing an existing image
-{ "prompt": "Transform this image into a watercolor painting style", "path": "images/watercolor-output.png", "image": "images/original-photo.jpg" }
+示例：编辑现有图像
+{ "prompt": "将此图像转换为水彩画风格", "path": "images/watercolor-output.png", "image": "images/original-photo.jpg" }
 
-Example: Upscaling and enhancing an image
-{ "prompt": "Upscale this image to higher resolution, enhance details, improve clarity and sharpness while maintaining the original content and composition", "path": "images/enhanced-photo.png", "image": "images/low-res-photo.jpg" }`
+示例：放大和增强图像
+{ "prompt": "将此图像放大到更高分辨率，增强细节，提高清晰度和锐度，同时保持原始内容和构图", "path": "images/enhanced-photo.png", "image": "images/low-res-photo.jpg" }`
 
-const PROMPT_PARAMETER_DESCRIPTION = `Text description of the image to generate or the edits to apply`
+const PROMPT_PARAMETER_DESCRIPTION = `要生成的图像或要应用的编辑的文本描述`
 
-const PATH_PARAMETER_DESCRIPTION = `Filesystem path (relative to the workspace) where the resulting image should be saved`
+const PATH_PARAMETER_DESCRIPTION = `结果图像应保存到的文件系统路径（相对于工作区）`
 
-const IMAGE_PARAMETER_DESCRIPTION = `Optional path (relative to the workspace) to an existing image to edit; supports PNG, JPG, JPEG, GIF, and WEBP`
+const IMAGE_PARAMETER_DESCRIPTION = `可选的要编辑的现有图像的路径（相对于工作区）；支持 PNG、JPG、JPEG、GIF 和 WEBP`
 
 export default {
 	type: "function",

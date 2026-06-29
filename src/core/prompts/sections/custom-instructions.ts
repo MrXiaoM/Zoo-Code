@@ -453,18 +453,18 @@ export async function addCustomInstructions(
 	if (options.language) {
 		const languageName = isLanguage(options.language) ? LANGUAGES[options.language] : options.language
 		sections.push(
-			`Language Preference:\nYou should always speak and think in the "${languageName}" (${options.language}) language unless the user gives you instructions below to do otherwise.`,
+			`语言偏好：\n除非用户另有指示，你应该始终以"${languageName}"（${options.language}）语言来思考和表达。`,
 		)
 	}
 
-	// Add global instructions first
+	// 先添加全局指令
 	if (typeof globalCustomInstructions === "string" && globalCustomInstructions.trim()) {
-		sections.push(`Global Instructions:\n${globalCustomInstructions.trim()}`)
+		sections.push(`全局指令：\n${globalCustomInstructions.trim()}`)
 	}
 
-	// Add mode-specific instructions after
+	// 然后添加模式特定指令
 	if (typeof modeCustomInstructions === "string" && modeCustomInstructions.trim()) {
-		sections.push(`Mode-specific Instructions:\n${modeCustomInstructions.trim()}`)
+		sections.push(`模式特定指令：\n${modeCustomInstructions.trim()}`)
 	}
 
 	// Add rules - include both mode-specific and generic rules if they exist
@@ -508,9 +508,9 @@ export async function addCustomInstructions(
 		? `
 ====
 
-USER'S CUSTOM INSTRUCTIONS
+用户的定制指令
 
-The following additional instructions are provided by the user, and should be followed to the best of your ability.
+以下附加指令由用户提供，你应尽力遵循。
 
 ${joinedSections}
 `
