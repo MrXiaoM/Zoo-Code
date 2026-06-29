@@ -14,6 +14,16 @@ export class TerminalProcess extends BaseTerminalProcess {
 	// Delay between Ctrl+C re-sends. Kept short so cancel stays responsive; the
 	// retry window is bounded by (CTRL_C_SEND_LIMIT - 1) * ABORT_RETRY_DELAY_MS.
 	private static readonly ABORT_RETRY_DELAY_MS = 500
+	// Fallback timeout for the post-stream `shell_execution_complete` event.
+	// Once the data stream has closed, the command has effectively finished in
+	// the shell; the only thing left is VS Code's end-of-execution signal
+	// (onDidEndTerminalShellExecution -> shellExecutionComplete). On Windows +
+	// Git Bash the OSC 633 command markers can get corrupted (e.g. the leading
+	// command character is swallowed), and VS Code may then never deliver a
+	// matching end event for this execution. Without a bound, `run()` would
+	// await forever and the whole tool call would hang. After this timeout we
+	// synthesize completion from the fact that the stream already closed.
+	private static readonly SHELL_EXECUTION_COMPLETE_TIMEOUT_MS = 5_000
 
 	private terminalRef: WeakRef<Terminal>
 	// Guards against overlapping abort retry loops if abort() is called again
@@ -213,7 +223,56 @@ export class TerminalProcess extends BaseTerminalProcess {
 		this.terminal.setActiveStream(undefined)
 
 		// Wait for shell execution to complete.
-		await shellExecutionComplete
+		//
+		// The data stream has already closed at this point, which means the
+		// command has effectively finished running in the shell. All we're
+		// waiting for now is VS Code's end-of-execution signal
+		// (onDidEndTerminalShellExecution -> shellExecutionComplete). On
+		// Windows + Git Bash the OSC 633 command markers can become corrupted
+		// (symptom: the leading command character is swallowed, e.g. `npx` runs
+		// as `px`), and VS Code may then never deliver a matching end event for
+		// this execution. Awaiting unconditionally would hang `run()` forever,
+		// which in turn hangs the whole tool call (no tool_result is ever
+		// produced and the UI is left with stale, disabled approval buttons).
+		//
+		// Since the stream is already closed, bound the wait: if the end event
+		// doesn't arrive in time, synthesize completion so the process always
+		// finishes cleanly.
+		let shellExecutionTimedOut = false
+		let completeTimeoutId: NodeJS.Timeout | undefined
+		const shellExecutionCompleteWithTimeout = Promise.race([
+			shellExecutionComplete,
+			new Promise<ExitCodeDetails>((resolve) => {
+				completeTimeoutId = setTimeout(() => {
+					shellExecutionTimedOut = true
+					// exitCode left undefined: we genuinely don't know the real
+					// exit status because VS Code never reported it. Downstream
+					// formatting surfaces this as an unknown exit status rather
+					// than falsely claiming success.
+					resolve({ exitCode: undefined })
+				}, TerminalProcess.SHELL_EXECUTION_COMPLETE_TIMEOUT_MS)
+			}),
+		])
+
+		await shellExecutionCompleteWithTimeout
+
+		if (completeTimeoutId) {
+			clearTimeout(completeTimeoutId)
+		}
+
+		if (shellExecutionTimedOut) {
+			console.warn(
+				"[TerminalProcess] shell_execution_complete was not received within " +
+					`${TerminalProcess.SHELL_EXECUTION_COMPLETE_TIMEOUT_MS}ms after the stream closed; ` +
+					"synthesizing completion (likely corrupted shell integration markers).",
+				{ terminalId: this.terminal.id, command: this.command },
+			)
+			// Mirror the bookkeeping shellExecutionComplete() would have done so
+			// the terminal isn't left marked busy/running and can be reused.
+			this.terminal.busy = false
+			this.terminal.running = false
+		}
+
 		this.terminal.activeShellExecution = undefined
 
 		this.isHot = false

@@ -21,7 +21,7 @@ vitest.mock("../../../integrations/terminal/Terminal")
 vitest.mock("../../../integrations/terminal/ExecaTerminal")
 
 // Import the actual executeCommand function (not mocked)
-import { executeCommandInTerminal } from "../ExecuteCommandTool"
+import { executeCommandInTerminal, resolveWatchdogTimeoutMs } from "../ExecuteCommandTool"
 
 // Tests for the executeCommand function
 describe("executeCommand", () => {
@@ -436,6 +436,89 @@ describe("executeCommand", () => {
 
 			// Verify the terminal's getCurrentWorkingDirectory was called
 			expect(mockTerminalInstance.getCurrentWorkingDirectory).toHaveBeenCalled()
+		})
+	})
+
+	describe("Watchdog safety net (hung process)", () => {
+		const originalCliRuntime = process.env.ROO_CLI_RUNTIME
+
+		afterEach(() => {
+			vitest.useRealTimers()
+			if (originalCliRuntime === undefined) {
+				delete process.env.ROO_CLI_RUNTIME
+			} else {
+				process.env.ROO_CLI_RUNTIME = originalCliRuntime
+			}
+		})
+
+		it("resolves with a clear tool_result when the process never settles", async () => {
+			delete process.env.ROO_CLI_RUNTIME
+			vitest.useFakeTimers()
+
+			mockTask.supersedePendingAsk = vitest.fn()
+			mockTerminal.getCurrentWorkingDirectory.mockReturnValue("/test/project")
+
+			// A process promise that NEVER resolves simulates a shell-integration
+			// hang where neither the stream closes nor the completion event fires.
+			const hangingProcess: any = new Promise<void>(() => {})
+			hangingProcess.continue = vitest.fn()
+			mockTerminal.runCommand.mockReturnValue(hangingProcess)
+
+			const options: ExecuteCommandOptions = {
+				executionId: "test-watchdog",
+				command: "hang-forever",
+				terminalShellIntegrationDisabled: false,
+				// No agent/user timeout: the watchdog is the only backstop.
+				commandExecutionTimeout: 0,
+				agentTimeout: 0,
+			}
+
+			const resultPromise = executeCommandInTerminal(mockTask, options)
+
+			// Advance past the watchdog timeout to trip the safety net, then flush
+			// the trailing awaited delays inside executeCommandInTerminal.
+			await vitest.advanceTimersByTimeAsync(600_000)
+			await vitest.advanceTimersByTimeAsync(100)
+
+			const [rejected, result] = await resultPromise
+
+			expect(rejected).toBe(false)
+			expect(hangingProcess.continue).toHaveBeenCalled()
+			expect(mockTask.supersedePendingAsk).toHaveBeenCalled()
+			expect(result).toContain("did not report its completion status")
+			expect(result).toContain("Do not automatically re-run it")
+		})
+	})
+
+	describe("resolveWatchdogTimeoutMs", () => {
+		const originalCliRuntime = process.env.ROO_CLI_RUNTIME
+
+		afterEach(() => {
+			if (originalCliRuntime === undefined) {
+				delete process.env.ROO_CLI_RUNTIME
+			} else {
+				process.env.ROO_CLI_RUNTIME = originalCliRuntime
+			}
+		})
+
+		it("arms the watchdog when no agent/user timeout is configured", () => {
+			delete process.env.ROO_CLI_RUNTIME
+			expect(resolveWatchdogTimeoutMs(0, 0)).toBe(600_000)
+		})
+
+		it("disarms the watchdog when an agent timeout is present", () => {
+			delete process.env.ROO_CLI_RUNTIME
+			expect(resolveWatchdogTimeoutMs(30_000, 0)).toBe(0)
+		})
+
+		it("disarms the watchdog when a user timeout is present", () => {
+			delete process.env.ROO_CLI_RUNTIME
+			expect(resolveWatchdogTimeoutMs(0, 15_000)).toBe(0)
+		})
+
+		it("disarms the watchdog in CLI runtime", () => {
+			process.env.ROO_CLI_RUNTIME = "1"
+			expect(resolveWatchdogTimeoutMs(0, 0)).toBe(0)
 		})
 	})
 })

@@ -51,6 +51,23 @@ interface ExecuteCommandParams {
 	timeout?: number | null
 }
 
+// Final safety-net timeout for the whole command race in executeCommandInTerminal.
+//
+// The terminal process promise is itself bounded (see TerminalProcess's
+// SHELL_EXECUTION_COMPLETE_TIMEOUT_MS fallback), so under normal operation the
+// race always settles on its own. This watchdog is defense-in-depth: if the
+// underlying process promise ever fails to settle (e.g. an unforeseen shell
+// integration edge case on Windows + Git Bash where neither the stream closes
+// nor the completion event fires), it guarantees the tool call still resolves
+// in bounded time and emits a tool_result, instead of hanging the entire task
+// loop with stale, disabled approval buttons in the UI.
+//
+// It is intentionally larger than the process-level fallback so it only ever
+// fires when the lower-level guard has already failed. When no agent/user
+// timeout is configured (e.g. the command is on the timeout allowlist) this is
+// the only thing preventing an indefinite hang.
+const COMMAND_RACE_WATCHDOG_TIMEOUT_MS = 600_000
+
 export function resolveAgentTimeoutMs(timeoutSeconds: number | null | undefined): number {
 	const requestedAgentTimeout = typeof timeoutSeconds === "number" && timeoutSeconds > 0 ? timeoutSeconds * 1000 : 0
 
@@ -58,6 +75,31 @@ export function resolveAgentTimeoutMs(timeoutSeconds: number | null | undefined)
 	// solely by commandExecutionTimeout (user setting), not model-provided
 	// background timeouts.
 	return process.env.ROO_CLI_RUNTIME === "1" ? 0 : requestedAgentTimeout
+}
+
+/**
+ * Resolve the watchdog timeout for the command race.
+ *
+ * The watchdog is only armed when neither the agent timeout nor the user
+ * (commandExecutionTimeout) timeout is providing an upper bound. When either is
+ * present it already guarantees the race settles, so the watchdog stays off to
+ * avoid second-guessing an intentionally configured limit.
+ *
+ * In CLI runtime the watchdog is disabled: stdin harnesses govern command
+ * lifetime via commandExecutionTimeout alone.
+ *
+ * @returns watchdog timeout in ms, or 0 when it should not be armed
+ */
+export function resolveWatchdogTimeoutMs(agentTimeoutMs: number, commandExecutionTimeoutMs: number): number {
+	if (process.env.ROO_CLI_RUNTIME === "1") {
+		return 0
+	}
+
+	if (agentTimeoutMs > 0 || commandExecutionTimeoutMs > 0) {
+		return 0
+	}
+
+	return COMMAND_RACE_WATCHDOG_TIMEOUT_MS
 }
 
 export class ExecuteCommandTool extends BaseTool<"execute_command"> {
@@ -443,7 +485,9 @@ export async function executeCommandInTerminal(
 	// even after the agent timeout moves the command to the background.
 	let agentTimeoutId: NodeJS.Timeout | undefined
 	let userTimeoutId: NodeJS.Timeout | undefined
+	let watchdogTimeoutId: NodeJS.Timeout | undefined
 	let isUserTimedOut = false
+	let isWatchdogTimedOut = false
 
 	try {
 		const racers: Promise<void>[] = [process]
@@ -475,6 +519,35 @@ export async function executeCommandInTerminal(
 			)
 		}
 
+		// Watchdog safety net (final backstop): the `process` promise should
+		// always resolve on its own — TerminalProcess.run() now bounds its wait
+		// for the shell_execution_complete event, and the no-shell-integration
+		// paths emit "continue" synchronously. This watchdog exists purely as a
+		// defense-in-depth measure: if some future change or unforeseen
+		// terminal-provider behavior ever leaves `process` pending, this ensures
+		// the race still settles in bounded time so the tool ALWAYS produces a
+		// tool_result instead of hanging the entire task loop (which previously
+		// left the UI with stale, disabled approval buttons and no stop button).
+		//
+		// It is only armed when neither the agent nor a user timeout is already
+		// providing an upper bound, so it never shortens an intentional timeout.
+		const watchdogTimeout = resolveWatchdogTimeoutMs(agentTimeout, commandExecutionTimeout)
+		if (watchdogTimeout > 0) {
+			racers.push(
+				new Promise<void>((resolve) => {
+					watchdogTimeoutId = setTimeout(() => {
+						isWatchdogTimedOut = true
+						runInBackground = true
+						// Nudge the process to wrap up and release any pending ask
+						// so downstream bookkeeping stays consistent.
+						task.terminalProcess?.continue()
+						task.supersedePendingAsk()
+						resolve()
+					}, watchdogTimeout)
+				}),
+			)
+		}
+
 		await Promise.race(racers)
 	} catch (error) {
 		if (isUserTimedOut) {
@@ -493,12 +566,34 @@ export async function executeCommandInTerminal(
 	} finally {
 		clearTimeout(agentTimeoutId)
 		clearTimeout(userTimeoutId)
+		clearTimeout(watchdogTimeoutId)
 		clearTimeout(pendingCommandOutputEmitTimer)
 		task.terminalProcess = undefined
 	}
 
 	if (shellIntegrationError) {
 		throw shellIntegrationError
+	}
+
+	// Watchdog backstop fired: the process never settled on its own within the
+	// bounded window. Surface a clear, actionable tool_result instead of hanging
+	// the task loop. We return rejected=false (this is not a user rejection) and
+	// tell the agent not to blindly re-run, since the command may have actually
+	// completed in the terminal even though we never received its status.
+	if (isWatchdogTimedOut) {
+		const status: CommandExecutionStatus = { executionId, status: "exited", exitCode: undefined }
+		provider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
+		task.didToolFailInCurrentTurn = true
+
+		const currentWorkingDir = terminal.getCurrentWorkingDirectory().toPosix()
+		return [
+			false,
+			[
+				`Command was submitted in terminal within working directory '${currentWorkingDir}', but the terminal did not report its completion status within the expected time (likely a shell integration problem).`,
+				result.length > 0 ? `Here's the output captured so far:\n${result}\n` : "\n",
+				"The command may have actually completed. Do not automatically re-run it; check the terminal or ask the user if you need to confirm the result.",
+			].join("\n"),
+		]
 	}
 
 	// Wait for a short delay to ensure all messages are sent to the webview.
