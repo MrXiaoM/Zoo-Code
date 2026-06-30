@@ -66,7 +66,7 @@
 		"tooltip": "批准此操作"
 	},
 	"runCommand": {
-		"title": "命令",
+		"title": "运行命令",
 		"tooltip": "执行此命令"
 	},
 	"proceedWhileRunning": {
@@ -241,7 +241,14 @@
 		"expandOutput": "展开输出",
 		"collapseOutput": "折叠输出",
 		"expandManagement": "展开命令管理部分",
-		"collapseManagement": "折叠命令管理部分"
+		"collapseManagement": "折叠命令管理部分",
+		"reuseTerminal": "复用终端",
+		"newTerminal": "新建终端",
+		"terminalType": "类型：{{type}}",
+		"workingDirectory": "工作目录：{{cwd}}",
+		"terminalProfile": "配置：{{profile}}",
+		"terminalId": "终端：#{{id}}",
+		"focusTerminal": "跳转"
 	},
 	"response": "响应",
 	"arguments": "参数",

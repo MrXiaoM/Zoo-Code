@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import * as vscode from "vscode"
 import { existsSync } from "fs"
 import { userInfo } from "os"
-import { getShell } from "../shell"
+import { getShell, getShellContext, getShellFamily, getShellPathStyle } from "../shell"
 
 // Mock vscode module
 vi.mock("vscode", () => ({
@@ -791,6 +791,34 @@ describe("Shell Detection Tests", () => {
 
 			const result = getShell()
 			expect(result).toBe("/bin/bash") // Should fall back to safe default
+		})
+	})
+	describe("Shell context helpers", () => {
+		it.each([
+			["C:\\Windows\\System32\\cmd.exe", "cmd"],
+			["C:\\Program Files\\PowerShell\\7\\pwsh.exe", "powershell"],
+			["C:\\Program Files\\Git\\bin\\bash.exe", "posix"],
+			["/usr/bin/fish", "fish"],
+			["/opt/custom/shell", "unknown"],
+		])("classifies %s as %s", (shellPath, expected) => {
+			expect(getShellFamily(shellPath)).toBe(expected)
+		})
+
+		it.each([
+			["C:\\Program Files\\Git\\bin\\bash.exe", "windows"],
+			["/mnt/c/Windows/System32/cmd.exe", "windows"],
+			["/usr/bin/bash", "posix"],
+		])("detects path style for %s", (shellPath, expected) => {
+			expect(getShellPathStyle(shellPath)).toBe(expected)
+		})
+
+		it("uses POSIX command semantics for Git Bash on Windows", () => {
+			const context = getShellContext("C:\\Program Files\\Git\\bin\\bash.exe")
+
+			expect(context.family).toBe("posix")
+			expect(context.pathStyle).toBe("windows")
+			expect(context.commandChainOperator).toBe("&&")
+			expect(context.avoidShellWrapper).toContain("cmd.exe/PowerShell")
 		})
 	})
 })

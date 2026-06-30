@@ -2,6 +2,15 @@ import EventEmitter from "events"
 
 export type RooTerminalProvider = "vscode" | "execa"
 
+export interface RooTerminalPreview {
+	provider: RooTerminalProvider
+	cwd: string
+	willReuseTerminal: boolean
+	terminalId?: number
+	reuseKey?: string
+	terminalProfile?: string
+}
+
 export interface RooTerminal {
 	provider: RooTerminalProvider
 	id: number

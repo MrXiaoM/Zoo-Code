@@ -1,9 +1,14 @@
 import { useCallback, useState, memo, useMemo } from "react"
 import { useEvent } from "react-use"
 import { t } from "i18next"
-import { ChevronDown, OctagonX } from "lucide-react"
+import { ChevronDown, OctagonX, SquareArrowOutUpRight } from "lucide-react"
 
-import { type ExtensionMessage, type CommandExecutionStatus, commandExecutionStatusSchema } from "@roo-code/types"
+import {
+	type ExtensionMessage,
+	type CommandExecutionStatus,
+	type CommandTerminalInfo,
+	commandExecutionStatusSchema,
+} from "@roo-code/types"
 
 import { safeJsonParse } from "@roo/core"
 import { COMMAND_OUTPUT_STRING } from "@roo/combineCommandSequences"
@@ -47,7 +52,11 @@ export const CommandExecution = ({ executionId, text, icon, title }: CommandExec
 		setDeniedCommands,
 	} = useExtensionState()
 
-	const { command, output: parsedOutput } = useMemo(() => parseCommandAndOutput(text), [text])
+	const {
+		command,
+		output: parsedOutput,
+		terminalInfo: approvalTerminalInfo,
+	} = useMemo(() => parseCommandAndOutput(text), [text])
 
 	// If we aren't opening the VSCode terminal for this command then we default
 	// to expanding the command execution output.
@@ -61,6 +70,8 @@ export const CommandExecution = ({ executionId, text, icon, title }: CommandExec
 	// task message (this is the case for completed commands) or from the
 	// streaming output (this is the case for running commands).
 	const output = streamingOutput || parsedOutput
+	const terminalInfo =
+		status?.status === "started" && status.terminalInfo ? status.terminalInfo : approvalTerminalInfo
 
 	// Extract command patterns from the actual command that was executed
 	const commandPatterns = useMemo<CommandPattern[]>(() => {
@@ -242,6 +253,7 @@ export const CommandExecution = ({ executionId, text, icon, title }: CommandExec
 
 			<div className="bg-vscode-editor-background border border-vscode-border rounded-xs ml-6 mt-2">
 				<div className="p-2">
+					{terminalInfo && <TerminalInfo terminalInfo={terminalInfo} />}
 					<CodeBlock source={command} language="shell" />
 					<OutputContainer isExpanded={isExpanded} output={output} />
 				</div>
@@ -261,6 +273,50 @@ export const CommandExecution = ({ executionId, text, icon, title }: CommandExec
 
 CommandExecution.displayName = "CommandExecution"
 
+const providerLabels: Record<CommandTerminalInfo["provider"], string> = {
+	vscode: "VS Code",
+	execa: "Execa",
+}
+
+const TerminalInfo = ({ terminalInfo }: { terminalInfo: CommandTerminalInfo }) => {
+	const canFocusTerminal =
+		terminalInfo.provider === "vscode" && terminalInfo.willReuseTerminal && terminalInfo.terminalId !== undefined
+
+	return (
+		<div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-vscode-descriptionForeground">
+			<span>
+				{terminalInfo.willReuseTerminal
+					? t("chat:commandExecution.reuseTerminal")
+					: t("chat:commandExecution.newTerminal")}
+			</span>
+			<span>{t("chat:commandExecution.terminalType", { type: providerLabels[terminalInfo.provider] })}</span>
+			<span className="break-all">{t("chat:commandExecution.workingDirectory", { cwd: terminalInfo.cwd })}</span>
+			{terminalInfo.terminalProfile && (
+				<span>{t("chat:commandExecution.terminalProfile", { profile: terminalInfo.terminalProfile })}</span>
+			)}
+			{terminalInfo.terminalId !== undefined && (
+				<span>{t("chat:commandExecution.terminalId", { id: terminalInfo.terminalId })}</span>
+			)}
+			{canFocusTerminal && (
+				<Button
+					variant="ghost"
+					size="sm"
+					className="h-6 px-1 text-xs"
+					onClick={() =>
+						vscode.postMessage({
+							type: "terminalOperation",
+							terminalOperation: "focus",
+							terminalId: terminalInfo.terminalId,
+						})
+					}>
+					<SquareArrowOutUpRight className="mr-1 size-3" />
+					{t("chat:commandExecution.focusTerminal")}
+				</Button>
+			)}
+		</div>
+	)
+}
+
 const OutputContainerInternal = ({ isExpanded, output }: { isExpanded: boolean; output: string }) => (
 	<div
 		className={cn("overflow-hidden", {
@@ -273,19 +329,26 @@ const OutputContainerInternal = ({ isExpanded, output }: { isExpanded: boolean; 
 
 const OutputContainer = memo(OutputContainerInternal)
 
-const parseCommandAndOutput = (text: string | undefined) => {
+const parseCommandAndOutput = (
+	text: string | undefined,
+): { command: string; output: string; terminalInfo?: CommandTerminalInfo } => {
 	if (!text) {
 		return { command: "", output: "" }
 	}
 
 	const index = text.indexOf(COMMAND_OUTPUT_STRING)
+	const rawCommand = index === -1 ? text : text.slice(0, index)
+	const output = index === -1 ? "" : text.slice(index + COMMAND_OUTPUT_STRING.length)
 
-	if (index === -1) {
-		return { command: text, output: "" }
+	try {
+		const parsed = JSON.parse(rawCommand) as { command?: unknown; terminalInfo?: CommandTerminalInfo }
+
+		if (typeof parsed.command === "string") {
+			return { command: parsed.command, output, terminalInfo: parsed.terminalInfo }
+		}
+	} catch {
+		// Older command messages are plain text.
 	}
 
-	return {
-		command: text.slice(0, index),
-		output: text.slice(index + COMMAND_OUTPUT_STRING.length),
-	}
+	return { command: rawCommand, output }
 }

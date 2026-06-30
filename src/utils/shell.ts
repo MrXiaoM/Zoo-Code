@@ -334,7 +334,69 @@ function getSafeFallbackShell(): string {
 }
 
 // -----------------------------------------------------
-// 5) Publicly Exposed Shell Getter
+// 5) Shell Description Helpers
+// -----------------------------------------------------
+
+export type ShellFamily = "cmd" | "fish" | "powershell" | "posix" | "unknown"
+
+export type ShellPathStyle = "posix" | "windows"
+
+export interface ShellContext {
+	shellPath: string
+	family: ShellFamily
+	pathStyle: ShellPathStyle
+	commandChainOperator: "&&" | ";"
+	avoidShellWrapper: string
+}
+
+export function getShellFamily(shellPath: string): ShellFamily {
+	const normalized = shellPath.replace(/\\/g, "/").toLowerCase()
+
+	if (/\/cmd\.exe$/.test(normalized)) {
+		return "cmd"
+	}
+
+	if (/\/(?:pwsh|powershell)(?:\.exe)?$/.test(normalized)) {
+		return "powershell"
+	}
+
+	if (/\/fish(?:\.exe)?$/.test(normalized)) {
+		return "fish"
+	}
+
+	if (/\/(?:bash|zsh|sh|dash|ash|ksh|ksh93|mksh|pdksh|csh|tcsh)(?:\.exe)?$/.test(normalized)) {
+		return "posix"
+	}
+
+	return "unknown"
+}
+
+export function getShellPathStyle(shellPath: string): ShellPathStyle {
+	const normalized = shellPath.replace(/\\/g, "/").toLowerCase()
+
+	if (/^[a-z]:\//.test(normalized) || normalized.includes("/windows/") || normalized.includes("/program files/")) {
+		return "windows"
+	}
+
+	return "posix"
+}
+
+export function getShellContext(shellPath: string = getShell()): ShellContext {
+	const family = getShellFamily(shellPath)
+	const commandChainOperator = family === "powershell" ? ";" : "&&"
+	const wrapperName = family === "cmd" ? "PowerShell/bash" : "cmd.exe/PowerShell"
+
+	return {
+		shellPath,
+		family,
+		pathStyle: getShellPathStyle(shellPath),
+		commandChainOperator,
+		avoidShellWrapper: `不要为了执行普通命令而包一层 ${wrapperName}；除非用户明确要求跨 Shell 执行，否则直接使用当前 Shell 语法。`,
+	}
+}
+
+// -----------------------------------------------------
+// 6) Publicly Exposed Shell Getter
 // -----------------------------------------------------
 
 export function getShell(): string {

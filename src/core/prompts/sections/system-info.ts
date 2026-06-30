@@ -1,7 +1,7 @@
 import os from "os"
 import osName from "os-name"
 
-import { getShell } from "../../../utils/shell"
+import { getShellContext } from "../../../utils/shell"
 
 export function getSystemInfoSection(cwd: string): string {
 	// Try to get detailed OS name, fall back to basic info if it fails
@@ -15,12 +15,18 @@ export function getSystemInfoSection(cwd: string): string {
 		osInfo = `${platform} ${release}`
 	}
 
+	const shellContext = getShellContext()
+
 	const details = `====
 
 系统信息
 
 操作系统：${osInfo}
-默认 Shell：${getShell()}
+默认 Shell：${shellContext.shellPath}
+命令执行 Shell：${shellContext.shellPath}
+命令 Shell 类型：${shellContext.family}
+Shell 路径风格：${shellContext.pathStyle}
+Shell 命令链接符：${shellContext.commandChainOperator}
 主目录：${os.homedir().toPosix()}
 当前工作区目录：${cwd.toPosix()}
 

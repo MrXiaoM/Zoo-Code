@@ -283,7 +283,14 @@
 		"expandOutput": "Expand output",
 		"collapseOutput": "Collapse output",
 		"expandManagement": "Expand command management section",
-		"collapseManagement": "Collapse command management section"
+		"collapseManagement": "Collapse command management section",
+		"reuseTerminal": "Reuse terminal",
+		"newTerminal": "New terminal",
+		"terminalType": "Type: {{type}}",
+		"workingDirectory": "Working directory: {{cwd}}",
+		"terminalProfile": "Profile: {{profile}}",
+		"terminalId": "Terminal: #{{id}}",
+		"focusTerminal": "Jump"
 	},
 	"response": "Response",
 	"arguments": "Arguments",

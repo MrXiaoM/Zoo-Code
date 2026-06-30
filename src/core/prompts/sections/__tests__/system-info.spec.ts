@@ -6,7 +6,14 @@ vi.mock("os-name", () => ({
 }))
 
 vi.mock("../../../../utils/shell", () => ({
-	getShell: vi.fn(() => "/bin/bash"),
+	getShellContext: vi.fn(() => ({
+		shellPath: "/bin/bash",
+		family: "posix",
+		pathStyle: "posix",
+		commandChainOperator: "&&",
+		avoidShellWrapper:
+			"不要为了执行普通命令而包一层 cmd.exe/PowerShell；除非用户明确要求跨 Shell 执行，否则直接使用当前 Shell 语法。",
+	})),
 }))
 
 import { getSystemInfoSection } from "../system-info"
@@ -35,6 +42,10 @@ describe("getSystemInfoSection", () => {
 
 		expect(result).toContain("操作系统：Ubuntu 22.04")
 		expect(result).toContain("默认 Shell：/bin/bash")
+		expect(result).toContain("命令执行 Shell：/bin/bash")
+		expect(result).toContain("命令 Shell 类型：posix")
+		expect(result).toContain("Shell 路径风格：posix")
+		expect(result).toContain("Shell 命令链接符：&&")
 		expect(result).toContain(`主目录：${mockHomeDir}`)
 		expect(result).toContain(`当前工作区目录：${mockCwd}`)
 	})

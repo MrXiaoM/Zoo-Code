@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 
 import { arePathsEqual } from "../../utils/path"
 
-import { RooTerminal, RooTerminalProvider } from "./types"
+import { RooTerminal, RooTerminalPreview, RooTerminalProvider } from "./types"
 import { TerminalProcess } from "./TerminalProcess"
 import { Terminal } from "./Terminal"
 import { ExecaTerminal } from "./ExecaTerminal"
@@ -157,6 +157,60 @@ export class TerminalRegistry {
 		return newTerminal
 	}
 
+	private static findReusableTerminal(
+		cwd: string,
+		taskId: string | undefined,
+		provider: RooTerminalProvider,
+	): RooTerminal | undefined {
+		const terminals = this.getAllTerminals()
+		const reuseKey = provider === "vscode" ? Terminal.getReuseKey() : provider
+		const matchesTerminal = (terminal: RooTerminal, requireTaskMatch: boolean): boolean => {
+			if (terminal.busy || terminal.provider !== provider || terminal.reuseKey !== reuseKey) {
+				return false
+			}
+
+			if (requireTaskMatch && terminal.taskId !== taskId) {
+				return false
+			}
+
+			const terminalCwd = terminal.getCurrentWorkingDirectory()
+
+			if (!terminalCwd) {
+				return false
+			}
+
+			return arePathsEqual(vscode.Uri.file(cwd).fsPath, terminalCwd)
+		}
+
+		if (taskId) {
+			const taskTerminal = terminals.find((terminal) => matchesTerminal(terminal, true))
+
+			if (taskTerminal) {
+				return taskTerminal
+			}
+		}
+
+		return terminals.find((terminal) => matchesTerminal(terminal, false))
+	}
+
+	public static previewTerminal(
+		cwd: string,
+		taskId?: string,
+		provider: RooTerminalProvider = "vscode",
+	): RooTerminalPreview {
+		const terminal = this.findReusableTerminal(cwd, taskId, provider)
+		const reuseKey = provider === "vscode" ? Terminal.getReuseKey() : provider
+
+		return {
+			provider,
+			cwd: terminal?.getCurrentWorkingDirectory() ?? cwd,
+			willReuseTerminal: terminal !== undefined,
+			terminalId: terminal?.id,
+			reuseKey,
+			terminalProfile: provider === "vscode" ? Terminal.getTerminalProfile() : Terminal.getExecaShellPath(),
+		}
+	}
+
 	/**
 	 * Gets an existing terminal or creates a new one for the given working
 	 * directory.
@@ -170,44 +224,7 @@ export class TerminalRegistry {
 		taskId?: string,
 		provider: RooTerminalProvider = "vscode",
 	): Promise<RooTerminal> {
-		const terminals = this.getAllTerminals()
-		const reuseKey = provider === "vscode" ? Terminal.getReuseKey() : provider
-		let terminal: RooTerminal | undefined
-
-		// First priority: Find a terminal already assigned to this task with
-		// matching directory.
-		if (taskId) {
-			terminal = terminals.find((t) => {
-				if (t.busy || t.taskId !== taskId || t.provider !== provider || t.reuseKey !== reuseKey) {
-					return false
-				}
-
-				const terminalCwd = t.getCurrentWorkingDirectory()
-
-				if (!terminalCwd) {
-					return false
-				}
-
-				return arePathsEqual(vscode.Uri.file(cwd).fsPath, terminalCwd)
-			})
-		}
-
-		// Second priority: Find any available terminal with matching directory.
-		if (!terminal) {
-			terminal = terminals.find((t) => {
-				if (t.busy || t.provider !== provider || t.reuseKey !== reuseKey) {
-					return false
-				}
-
-				const terminalCwd = t.getCurrentWorkingDirectory()
-
-				if (!terminalCwd) {
-					return false
-				}
-
-				return arePathsEqual(vscode.Uri.file(cwd).fsPath, terminalCwd)
-			})
-		}
+		let terminal = this.findReusableTerminal(cwd, taskId, provider)
 
 		// If no suitable terminal found, create a new one.
 		if (!terminal) {
@@ -336,6 +353,17 @@ export class TerminalRegistry {
 				terminal.taskId = undefined
 			}
 		})
+	}
+
+	public static focusTerminal(id: number): boolean {
+		const terminal = this.getTerminalById(id)
+
+		if (terminal instanceof Terminal) {
+			terminal.terminal.show(true)
+			return true
+		}
+
+		return false
 	}
 
 	private static getAllTerminals(): RooTerminal[] {

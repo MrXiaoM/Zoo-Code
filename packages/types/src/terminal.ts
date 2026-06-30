@@ -4,12 +4,24 @@ import { z } from "zod"
  * CommandExecutionStatus
  */
 
+export const commandTerminalInfoSchema = z.object({
+	terminalId: z.number().optional(),
+	provider: z.enum(["vscode", "execa"]),
+	willReuseTerminal: z.boolean(),
+	cwd: z.string(),
+	reuseKey: z.string().optional(),
+	terminalProfile: z.string().optional(),
+})
+
+export type CommandTerminalInfo = z.infer<typeof commandTerminalInfoSchema>
+
 export const commandExecutionStatusSchema = z.discriminatedUnion("status", [
 	z.object({
 		executionId: z.string(),
 		status: z.literal("started"),
 		pid: z.number().optional(),
 		command: z.string(),
+		terminalInfo: commandTerminalInfoSchema.optional(),
 	}),
 	z.object({
 		executionId: z.string(),

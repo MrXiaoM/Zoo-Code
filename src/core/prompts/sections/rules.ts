@@ -1,6 +1,6 @@
 import type { SystemPromptSettings } from "../types"
 
-import { getShell } from "../../../utils/shell"
+import { getShellContext } from "../../../utils/shell"
 
 /**
  * Returns the appropriate command chaining operator based on the user's shell.
@@ -10,41 +10,28 @@ import { getShell } from "../../../utils/shell"
  * @internal Exported for testing purposes
  */
 export function getCommandChainOperator(): string {
-	const shell = getShell().toLowerCase()
-
-	// Check for PowerShell (both Windows PowerShell and PowerShell Core)
-	if (shell.includes("powershell") || shell.includes("pwsh")) {
-		return ";"
-	}
-
-	// Check for cmd.exe
-	if (shell.includes("cmd.exe")) {
-		return "&&"
-	}
-
-	// Default to Unix-style && for bash, zsh, sh, and other shells
-	// This also covers Git Bash, WSL, and other Unix-like environments on Windows
-	return "&&"
+	return getShellContext().commandChainOperator
 }
 
 /**
  * Returns a shell-specific note about command chaining syntax and platform-specific utilities.
  */
 function getCommandChainNote(): string {
-	const shell = getShell().toLowerCase()
+	const shellContext = getShellContext()
 
-	// Check for PowerShell
-	if (shell.includes("powershell") || shell.includes("pwsh")) {
-		return "注意：使用 `;` 进行 PowerShell 命令链接。对于 bash/zsh 使用 `&&`，对于 cmd.exe 使用 `&&`。重要：使用 PowerShell 时，避免 Unix 特定工具如 `sed`、`grep`、`awk`、`cat`、`rm`、`cp`、`mv`。改用 PowerShell 等效命令：使用 `Select-String` 代替 grep，`Get-Content` 代替 cat，`Remove-Item` 代替 rm，`Copy-Item` 代替 cp，`Move-Item` 代替 mv，以及 PowerShell 的 `-replace` 运算符或 `[regex]` 代替 sed。"
+	if (shellContext.family === "powershell") {
+		return `${shellContext.avoidShellWrapper} 注意：使用 \`;\` 进行 PowerShell 命令链接，并使用 PowerShell 路径/转义规则。对于 bash/zsh/Git Bash 使用 \`&&\`，对于 cmd.exe 使用 \`&&\`。重要：使用 PowerShell 时，避免 Unix 特定工具如 \`sed\`、\`grep\`、\`awk\`、\`cat\`、\`rm\`、\`cp\`、\`mv\`。改用 PowerShell 等效命令：使用 \`Select-String\` 代替 grep，\`Get-Content\` 代替 cat，\`Remove-Item\` 代替 rm，\`Copy-Item\` 代替 cp，\`Move-Item\` 代替 mv，以及 PowerShell 的 \`-replace\` 运算符或 \`[regex]\` 代替 sed。`
 	}
 
-	// Check for cmd.exe
-	if (shell.includes("cmd.exe")) {
-		return "注意：使用 `&&` 进行 cmd.exe 命令链接（条件执行）。对于 bash/zsh 使用 `&&`，对于 PowerShell 使用 `;`。重要：使用 cmd.exe 时，避免 Unix 特定工具如 `sed`、`grep`、`awk`、`cat`、`rm`、`cp`、`mv`。改用内置命令，如 `type` 代替 cat，`del` 代替 rm，`copy` 代替 cp，`move` 代替 mv，`find`/`findstr` 代替 grep，或考虑使用 PowerShell 命令。"
+	if (shellContext.family === "cmd") {
+		return `${shellContext.avoidShellWrapper} 注意：使用 \`&&\` 进行 cmd.exe 命令链接（条件执行），并使用 cmd.exe 路径/转义规则。对于 bash/zsh/Git Bash 使用 \`&&\`，对于 PowerShell 使用 \`;\`。重要：使用 cmd.exe 时，避免 Unix 特定工具如 \`sed\`、\`grep\`、\`awk\`、\`cat\`、\`rm\`、\`cp\`、\`mv\`。改用内置命令，如 \`type\` 代替 cat，\`del\` 代替 rm，\`copy\` 代替 cp，\`move\` 代替 mv，\`find\`/\`findstr\` 代替 grep。`
 	}
 
-	// Unix shells
-	return ""
+	if (shellContext.family === "posix" || shellContext.family === "fish") {
+		return `${shellContext.avoidShellWrapper} 注意：当前命令 Shell 使用 Unix 风格语法；即使操作系统是 Windows，只要当前 Shell 是 Git Bash/MSYS/WSL/bash/zsh，也必须使用 \`/\` 路径分隔符、POSIX 引号/转义规则和 \`&&\` 命令链接，不要使用 Windows \`cd /d\`、反斜杠路径或 \`cmd /c "..."\` 包装。`
+	}
+
+	return shellContext.avoidShellWrapper
 }
 
 function getVendorConfidentialitySection(): string {
@@ -75,7 +62,7 @@ export function getRulesSection(cwd: string, settings?: SystemPromptSettings): s
 - 所有文件路径必须相对于此目录。但是，命令可能会在终端中切换目录，因此请遵循 execute_command 响应中指定的工作目录。
 - 你不能 \`cd\` 到其他目录来完成任务。你只能在 '${cwd.toPosix()}' 中操作，因此使用需要 path 参数的工具时，请确保传入正确的 'path' 参数。
 - 不要使用 ~ 字符或 $HOME 来引用主目录。
-- 在使用 execute_command 工具之前，你必须首先思考提供的 SYSTEM INFORMATION 上下文，以了解用户的环境，并定制你的命令以确保它们与用户的系统兼容。你还必须考虑你需要运行的命令是否需要在当前工作目录 '${cwd.toPosix()}' 之外执行，如果是，则需要在前面加上 \`cd\` 进入该目录 ${chainOp} 然后执行命令（作为一个命令，因为你只能在 '${cwd.toPosix()}' 中操作）。例如，如果你需要在 '${cwd.toPosix()}' 之外的项目中运行 \`npm install\`，你需要在前面加上一个 \`cd\`，即伪代码为：\`cd (项目路径) ${chainOp} (命令，这里为 npm install)\`。${chainNote ? ` ${chainNote}` : ""}
+- 在使用 execute_command 工具之前，你必须首先思考提供的 SYSTEM INFORMATION 上下文，以了解用户的环境，并定制你的命令以确保它们与用户的系统兼容。你还必须考虑你需要运行的命令是否需要在当前工作目录 '${cwd.toPosix()}' 之外执行；优先通过 execute_command 的 cwd 参数表达目标工作目录。只有当 cwd 参数无法表达且确实需要临时切换目录时，才在命令前加上 \`cd\` 进入该目录 ${chainOp} 然后执行命令。如果 execute_command 的 cwd 已经是目标目录，或者你复用/新建的终端工作目录已经位于目标目录，严禁在 command 中再次 \`cd\` 到同一目录（例如 cwd 已是 \`src\` 时不要执行 \`cd src ${chainOp} ...\`）。例如，如果你需要在 '${cwd.toPosix()}' 之外的项目中运行 \`npm install\`，优先设置 cwd 为该项目路径；若必须写在命令中，伪代码为：\`cd (项目路径) ${chainOp} (命令，这里为 npm install)\`。${chainNote ? ` ${chainNote}` : ""}
 - 某些模式对可以编辑的文件有限制。如果你尝试编辑受限制的文件，操作将被拒绝，并抛出一个 FileRestrictionError，该错误会指定当前模式允许的文件模式。
 - 在确定适当的文件结构和要包含的文件时，请务必考虑项目的类型（例如 Python、JavaScript、Web 应用程序）。还要考虑哪些文件可能与完成任务最相关，例如查看项目的 manifest 文件可以帮助你了解项目的依赖关系，你可以将其纳入你所编写的代码中。
 	 * 例如，在 architect 模式下尝试编辑 app.js 会被拒绝，因为 architect 模式只能编辑匹配 "\\.md$" 的文件。

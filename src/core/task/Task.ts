@@ -1553,11 +1553,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		}
 	}
 
-	async handleTerminalOperation(terminalOperation: "continue" | "abort") {
+	async handleTerminalOperation(terminalOperation: "continue" | "abort" | "focus", terminalId?: number) {
 		if (terminalOperation === "continue") {
 			this.terminalProcess?.continue()
 		} else if (terminalOperation === "abort") {
 			this.terminalProcess?.abort()
+		} else if (terminalOperation === "focus" && terminalId !== undefined) {
+			TerminalRegistry.focusTerminal(terminalId)
 		}
 	}
 

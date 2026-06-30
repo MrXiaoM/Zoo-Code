@@ -28,6 +28,13 @@ vitest.mock("vscode", () => ({
 
 vitest.mock("../../../integrations/terminal/TerminalRegistry", () => ({
 	TerminalRegistry: {
+		previewTerminal: vitest.fn().mockReturnValue({
+			provider: "execa",
+			cwd: "/test/workspace",
+			willReuseTerminal: false,
+			reuseKey: "execa",
+			terminalProfile: "/bin/bash",
+		}),
 		getOrCreateTerminal: vitest.fn().mockResolvedValue({
 			runCommand: vitest.fn().mockResolvedValue(undefined),
 			getCurrentWorkingDirectory: vitest.fn().mockReturnValue("/test/workspace"),
@@ -40,7 +47,7 @@ vitest.mock("../../prompts/responses")
 
 // Import the module
 import * as executeCommandModule from "../ExecuteCommandTool"
-const { executeCommandTool } = executeCommandModule
+const { executeCommandTool, parseCommandApprovalMessage } = executeCommandModule
 
 describe("executeCommandTool", () => {
 	// Setup common test variables
@@ -161,11 +168,22 @@ describe("executeCommandTool", () => {
 			})
 
 			// Verify
-			expect(mockAskApproval).toHaveBeenCalledWith("command", "echo test")
+			const [, approvalMessage] = mockAskApproval.mock.calls[0]
+			expect(mockAskApproval).toHaveBeenCalledWith("command", expect.any(String))
+			expect(parseCommandApprovalMessage(approvalMessage)).toEqual({
+				command: "echo test",
+				terminalInfo: {
+					provider: "execa",
+					cwd: "/test/workspace",
+					willReuseTerminal: false,
+					reuseKey: "execa",
+					terminalProfile: "/bin/bash",
+				},
+			})
 			expect(mockPushToolResult).toHaveBeenCalled()
 			// The exact message depends on the terminal mock's behavior
 			const result = mockPushToolResult.mock.calls[0][0]
-			expect(result).toContain("Command")
+			expect(result).toContain("终端")
 		})
 
 		it("should pass along custom working directory if provided", async () => {
@@ -183,7 +201,9 @@ describe("executeCommandTool", () => {
 
 			// Verify - confirm the command was approved and result was pushed
 			// The custom path handling is tested in integration tests
-			expect(mockAskApproval).toHaveBeenCalledWith("command", "echo test")
+			const [, approvalMessage] = mockAskApproval.mock.calls[0]
+			expect(mockAskApproval).toHaveBeenCalledWith("command", expect.any(String))
+			expect(parseCommandApprovalMessage(approvalMessage).command).toBe("echo test")
 			expect(mockPushToolResult).toHaveBeenCalled()
 			const result = mockPushToolResult.mock.calls[0][0]
 			expect(result).toContain("/custom/path")
@@ -226,7 +246,9 @@ describe("executeCommandTool", () => {
 			})
 
 			// Verify
-			expect(mockAskApproval).toHaveBeenCalledWith("command", "echo test")
+			const [, approvalMessage] = mockAskApproval.mock.calls[0]
+			expect(mockAskApproval).toHaveBeenCalledWith("command", expect.any(String))
+			expect(parseCommandApprovalMessage(approvalMessage).command).toBe("echo test")
 			// executeCommandInTerminal should not be called since approval was denied
 			expect(mockPushToolResult).not.toHaveBeenCalled()
 		})

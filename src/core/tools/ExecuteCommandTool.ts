@@ -15,6 +15,7 @@ import { unescapeHtmlEntities } from "../../utils/text-normalization"
 import { parseCommand } from "../../shared/parse-command"
 import {
 	ExitCodeDetails,
+	RooTerminal,
 	RooTerminalCallbacks,
 	RooTerminalProvider,
 	RooTerminalProcess,
@@ -23,6 +24,7 @@ import {
 } from "../../integrations/terminal/types"
 import { TerminalRegistry } from "../../integrations/terminal/TerminalRegistry"
 import { Terminal } from "../../integrations/terminal/Terminal"
+import type { RooTerminalPreview } from "../../integrations/terminal/types"
 import { OutputInterceptor } from "../../integrations/terminal/OutputInterceptor"
 import { Package } from "../../shared/package"
 import { t } from "../../i18n"
@@ -148,7 +150,16 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 				return
 			}
 
-			const didApprove = await askApproval("command", canonicalCommand)
+			const terminalShellIntegrationDisabledForApproval =
+				(await (await task.providerRef.deref())?.getState())?.terminalShellIntegrationDisabled ?? true
+			const terminalPreview = await getCommandTerminalPreview(task, {
+				customCwd,
+				terminalShellIntegrationDisabled: terminalShellIntegrationDisabledForApproval,
+			})
+			const didApprove = await askApproval(
+				"command",
+				formatCommandApprovalMessage(canonicalCommand, terminalPreview),
+			)
 
 			if (!didApprove) {
 				return
@@ -244,6 +255,31 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 	}
 }
 
+export function formatCommandApprovalMessage(command: string, terminalInfo: RooTerminalPreview): string {
+	return JSON.stringify({ command, terminalInfo })
+}
+
+export function parseCommandApprovalMessage(text: string | undefined): {
+	command: string
+	terminalInfo?: RooTerminalPreview
+} {
+	if (!text) {
+		return { command: "" }
+	}
+
+	try {
+		const parsed = JSON.parse(text) as { command?: unknown; terminalInfo?: RooTerminalPreview }
+
+		if (typeof parsed.command === "string") {
+			return { command: parsed.command, terminalInfo: parsed.terminalInfo }
+		}
+	} catch {
+		// Older command messages are plain text.
+	}
+
+	return { command: text }
+}
+
 export type ExecuteCommandOptions = {
 	executionId: string
 	command: string
@@ -251,6 +287,44 @@ export type ExecuteCommandOptions = {
 	terminalShellIntegrationDisabled?: boolean
 	commandExecutionTimeout?: number
 	agentTimeout?: number
+}
+
+async function resolveWorkingDirectory(task: Task, customCwd?: string): Promise<string> {
+	let workingDir: string
+
+	if (!customCwd) {
+		workingDir = task.cwd
+	} else if (path.isAbsolute(customCwd)) {
+		workingDir = customCwd
+	} else {
+		workingDir = path.resolve(task.cwd, customCwd)
+	}
+
+	await fs.access(workingDir)
+	return workingDir
+}
+
+export async function getCommandTerminalPreview(
+	task: Task,
+	{
+		customCwd,
+		terminalShellIntegrationDisabled = true,
+	}: Pick<ExecuteCommandOptions, "customCwd" | "terminalShellIntegrationDisabled">,
+): Promise<RooTerminalPreview> {
+	const workingDir = await resolveWorkingDirectory(task, customCwd)
+	const { terminalProvider } = getTerminalProviderForExecution(terminalShellIntegrationDisabled)
+	return TerminalRegistry.previewTerminal(workingDir, task.taskId, terminalProvider)
+}
+
+function getTerminalInfoForStatus(terminal: RooTerminal, fallbackCwd: string): RooTerminalPreview {
+	return {
+		provider: terminal.provider,
+		cwd: terminal.getCurrentWorkingDirectory() ?? fallbackCwd,
+		willReuseTerminal: true,
+		terminalId: terminal.provider === "vscode" ? terminal.id : undefined,
+		reuseKey: terminal.reuseKey,
+		terminalProfile: terminal.provider === "vscode" ? Terminal.getTerminalProfile() : Terminal.getExecaShellPath(),
+	}
 }
 
 export async function executeCommandInTerminal(
@@ -268,18 +342,15 @@ export async function executeCommandInTerminal(
 	const commandExecutionTimeoutSeconds = commandExecutionTimeout / 1000
 	let workingDir: string
 
-	if (!customCwd) {
-		workingDir = task.cwd
-	} else if (path.isAbsolute(customCwd)) {
-		workingDir = customCwd
-	} else {
-		workingDir = path.resolve(task.cwd, customCwd)
-	}
-
 	try {
-		await fs.access(workingDir)
+		workingDir = await resolveWorkingDirectory(task, customCwd)
 	} catch (error) {
-		return [false, `指定的工作目录 '${workingDir}' 不存在。`]
+		const requestedWorkingDir = !customCwd
+			? task.cwd
+			: path.isAbsolute(customCwd)
+				? customCwd
+				: path.resolve(task.cwd, customCwd)
+		return [false, `指定的工作目录 '${requestedWorkingDir}' 不存在。`]
 	}
 
 	let message: { text?: string; images?: string[] } | undefined
@@ -290,6 +361,7 @@ export async function executeCommandInTerminal(
 	let exitDetails: ExitCodeDetails | undefined
 	let shellIntegrationError: ShellIntegrationError | undefined
 	let hasAskedForCommandOutput = false
+	let terminalInfoForStatus: RooTerminalPreview | undefined
 
 	const { terminalProvider, isCmdExeFallback } = getTerminalProviderForExecution(terminalShellIntegrationDisabled)
 	const provider = await task.providerRef.deref()
@@ -447,7 +519,13 @@ export async function executeCommandInTerminal(
 			}
 		},
 		onShellExecutionStarted: (pid: number | undefined) => {
-			const status: CommandExecutionStatus = { executionId, status: "started", pid, command }
+			const status: CommandExecutionStatus = {
+				executionId,
+				status: "started",
+				pid,
+				command,
+				terminalInfo: terminalInfoForStatus,
+			}
 			provider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 		},
 		onShellExecutionComplete: (details: ExitCodeDetails) => {
@@ -465,6 +543,7 @@ export async function executeCommandInTerminal(
 	}
 
 	const terminal = await TerminalRegistry.getOrCreateTerminal(workingDir, task.taskId, terminalProvider)
+	terminalInfoForStatus = getTerminalInfoForStatus(terminal, workingDir)
 
 	if (terminal instanceof Terminal) {
 		terminal.terminal.show(true)
@@ -473,6 +552,7 @@ export async function executeCommandInTerminal(
 		// a different working directory so that the model will know where the
 		// command actually executed.
 		workingDir = terminal.getCurrentWorkingDirectory()
+		terminalInfoForStatus = getTerminalInfoForStatus(terminal, workingDir)
 	}
 
 	const process = terminal.runCommand(command, callbacks)

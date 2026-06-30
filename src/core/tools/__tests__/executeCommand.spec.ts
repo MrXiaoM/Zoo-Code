@@ -73,6 +73,13 @@ describe("executeCommand", () => {
 
 		// Mock TerminalRegistry.getOrCreateTerminal
 		;(TerminalRegistry.getOrCreateTerminal as any).mockResolvedValue(mockTerminal)
+		;(TerminalRegistry.previewTerminal as any).mockReturnValue({
+			provider: "vscode",
+			cwd: "/test/project",
+			willReuseTerminal: true,
+			terminalId: 1,
+			terminalProfile: undefined,
+		})
 	})
 
 	describe("Working Directory Behavior", () => {
@@ -107,8 +114,8 @@ describe("executeCommand", () => {
 			// Verify
 			expect(rejected).toBe(false)
 			expect(mockTerminal.getCurrentWorkingDirectory).toHaveBeenCalled()
-			expect(result).toContain(`within working directory '${currentCwd}'`)
-			expect(result).not.toContain(`within working directory '${initialCwd}'`)
+			expect(result).toContain(`在工作目录 '${currentCwd}'`)
+			expect(result).not.toContain(`在工作目录 '${initialCwd}'`)
 		})
 
 		it("should use terminal.getCurrentWorkingDirectory() for VSCode Terminal with shell integration", async () => {
@@ -146,7 +153,7 @@ describe("executeCommand", () => {
 
 			// Verify
 			expect(rejected).toBe(false)
-			expect(result).toContain("within working directory '/test/project/changed-dir'")
+			expect(result).toContain("在工作目录 '/test/project/changed-dir'")
 		})
 
 		it("should use terminal.getCurrentWorkingDirectory() for ExecaTerminal (always returns initialCwd)", async () => {
@@ -179,7 +186,7 @@ describe("executeCommand", () => {
 			// Verify
 			expect(rejected).toBe(false)
 			expect(mockExecaTerminal.getCurrentWorkingDirectory).toHaveBeenCalled()
-			expect(result).toContain("within working directory '/test/project'")
+			expect(result).toContain("在工作目录 '/test/project'")
 		})
 	})
 
@@ -209,7 +216,7 @@ describe("executeCommand", () => {
 			// Verify
 			expect(rejected).toBe(false)
 			expect(TerminalRegistry.getOrCreateTerminal).toHaveBeenCalledWith(customCwd, mockTask.taskId, "vscode")
-			expect(result).toContain(`within working directory '${customCwd}'`)
+			expect(result).toContain(`在工作目录 '${customCwd}'`)
 		})
 
 		it("should handle relative custom cwd and use terminal.getCurrentWorkingDirectory() in output", async () => {
@@ -238,7 +245,7 @@ describe("executeCommand", () => {
 			// Verify
 			expect(rejected).toBe(false)
 			expect(TerminalRegistry.getOrCreateTerminal).toHaveBeenCalledWith(resolvedCwd, mockTask.taskId, "vscode")
-			expect(result).toContain(`within working directory '${resolvedCwd.toPosix()}'`)
+			expect(result).toContain(`在工作目录 '${resolvedCwd.toPosix()}'`)
 		})
 
 		it("should return error when custom working directory does not exist", async () => {
@@ -259,7 +266,7 @@ describe("executeCommand", () => {
 
 			// Verify
 			expect(rejected).toBe(false)
-			expect(result).toBe(`Working directory '${nonExistentCwd}' does not exist.`)
+			expect(result).toBe(`指定的工作目录 '${nonExistentCwd}' 不存在。`)
 			expect(TerminalRegistry.getOrCreateTerminal).not.toHaveBeenCalled()
 		})
 	})
@@ -311,6 +318,41 @@ describe("executeCommand", () => {
 	})
 
 	describe("Command Execution States", () => {
+		it("should send terminal info when command starts", async () => {
+			mockTerminal.runCommand.mockImplementation((command: string, callbacks: RooTerminalCallbacks) => {
+				callbacks.onShellExecutionStarted?.(1234, mockProcess)
+				setTimeout(() => {
+					callbacks.onCompleted("Command completed successfully", mockProcess)
+					callbacks.onShellExecutionComplete({ exitCode: 0 }, mockProcess)
+				}, 0)
+				return mockProcess
+			})
+
+			const options: ExecuteCommandOptions = {
+				executionId: "test-123",
+				command: "echo success",
+				terminalShellIntegrationDisabled: false,
+			}
+
+			await executeCommandInTerminal(mockTask, options)
+
+			expect(mockProvider.postMessageToWebview).toHaveBeenCalledWith({
+				type: "commandExecutionStatus",
+				text: JSON.stringify({
+					executionId: "test-123",
+					status: "started",
+					pid: 1234,
+					command: "echo success",
+					terminalInfo: {
+						provider: "vscode",
+						cwd: "/test/project",
+						willReuseTerminal: true,
+						terminalId: 1,
+					},
+				}),
+			})
+		})
+
 		it("should handle completed command with exit code 0", async () => {
 			mockTerminal.getCurrentWorkingDirectory.mockReturnValue("/test/project")
 			mockTerminal.runCommand.mockImplementation((command: string, callbacks: RooTerminalCallbacks) => {
@@ -332,8 +374,8 @@ describe("executeCommand", () => {
 
 			// Verify
 			expect(rejected).toBe(false)
-			expect(result).toContain("Exit code: 0")
-			expect(result).toContain("within working directory '/test/project'")
+			expect(result).toContain("退出码：0")
+			expect(result).toContain("在工作目录 '/test/project'")
 		})
 
 		it("should handle completed command with non-zero exit code", async () => {
@@ -357,9 +399,9 @@ describe("executeCommand", () => {
 
 			// Verify
 			expect(rejected).toBe(false)
-			expect(result).toContain("Command execution was not successful")
-			expect(result).toContain("Exit code: 1")
-			expect(result).toContain("within working directory '/test/project'")
+			expect(result).toContain("命令执行不成功")
+			expect(result).toContain("退出码：1")
+			expect(result).toContain("在工作目录 '/test/project'")
 		})
 
 		it("should handle command terminated by signal", async () => {
@@ -390,8 +432,8 @@ describe("executeCommand", () => {
 
 			// Verify
 			expect(rejected).toBe(false)
-			expect(result).toContain("Process terminated by signal SIGINT")
-			expect(result).toContain("within working directory '/test/project'")
+			expect(result).toContain("进程已由信号 SIGINT 终止")
+			expect(result).toContain("在工作目录 '/test/project'")
 		})
 	})
 
@@ -431,8 +473,8 @@ describe("executeCommand", () => {
 
 			// Verify the result uses the updated working directory
 			expect(rejected).toBe(false)
-			expect(result).toContain(`within working directory '${updatedCwd}'`)
-			expect(result).not.toContain(`within working directory '${initialCwd}'`)
+			expect(result).toContain(`在工作目录 '${updatedCwd}'`)
+			expect(result).not.toContain(`在工作目录 '${initialCwd}'`)
 
 			// Verify the terminal's getCurrentWorkingDirectory was called
 			expect(mockTerminalInstance.getCurrentWorkingDirectory).toHaveBeenCalled()
@@ -485,8 +527,8 @@ describe("executeCommand", () => {
 			expect(rejected).toBe(false)
 			expect(hangingProcess.continue).toHaveBeenCalled()
 			expect(mockTask.supersedePendingAsk).toHaveBeenCalled()
-			expect(result).toContain("did not report its completion status")
-			expect(result).toContain("Do not automatically re-run it")
+			expect(result).toContain("没有在预期时间内报告它的完成状态")
+			expect(result).toContain("不要自动重新运行")
 		})
 	})
 

@@ -668,7 +668,8 @@ export interface WebviewMessage {
 	newSkillModeSlugs?: string[] // For updateSkillModes (new mode restrictions)
 	requestId?: string
 	ids?: string[]
-	terminalOperation?: "continue" | "abort"
+	terminalOperation?: "continue" | "abort" | "focus"
+	terminalId?: number
 	messageTs?: number
 	restoreCheckpoint?: boolean
 	historyPreviewCollapsed?: boolean

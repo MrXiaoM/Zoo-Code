@@ -188,6 +188,53 @@ describe("TerminalRegistry", () => {
 		})
 	})
 
+	describe("previewTerminal", () => {
+		it("returns reusable terminal details without creating a terminal", async () => {
+			const terminal = await TerminalRegistry.getOrCreateTerminal("/test/path", "task", "vscode")
+
+			const preview = TerminalRegistry.previewTerminal("/test/path", "task", "vscode")
+
+			expect(preview).toEqual({
+				provider: "vscode",
+				cwd: "/test/path",
+				willReuseTerminal: true,
+				terminalId: terminal.id,
+				reuseKey: "vscode:default",
+				terminalProfile: undefined,
+			})
+			expect(mockCreateTerminal).toHaveBeenCalledTimes(1)
+		})
+
+		it("previews a new terminal without creating it", () => {
+			const preview = TerminalRegistry.previewTerminal("/test/path", "task", "vscode")
+
+			expect(preview).toEqual({
+				provider: "vscode",
+				cwd: "/test/path",
+				willReuseTerminal: false,
+				terminalId: undefined,
+				reuseKey: "vscode:default",
+				terminalProfile: undefined,
+			})
+			expect(mockCreateTerminal).not.toHaveBeenCalled()
+		})
+	})
+
+	describe("focusTerminal", () => {
+		it("shows a VS Code terminal by id", () => {
+			const terminal = TerminalRegistry.createTerminal("/test/path", "vscode") as Terminal
+
+			expect(TerminalRegistry.focusTerminal(terminal.id)).toBe(true)
+			expect(terminal.terminal.show).toHaveBeenCalledWith(true)
+		})
+
+		it("returns false for execa terminals", () => {
+			const terminal = TerminalRegistry.createTerminal("/test/path", "execa")
+
+			expect(TerminalRegistry.focusTerminal(terminal.id)).toBe(false)
+		})
+	})
+
 	describe("closeIdleTerminals", () => {
 		it("disposes only idle VS Code terminals and cleans up their temporary zsh directories", () => {
 			const idle = TerminalRegistry.createTerminal("/idle", "vscode") as Terminal

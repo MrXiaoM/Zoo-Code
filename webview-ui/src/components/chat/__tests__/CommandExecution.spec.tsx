@@ -4,9 +4,28 @@ import React from "react"
 import { render, screen, fireEvent, act } from "@testing-library/react"
 
 import { CommandExecution } from "../CommandExecution"
+import { TooltipProvider } from "../../../components/ui/tooltip"
 import { ExtensionStateContext } from "../../../context/ExtensionStateContext"
 
 // Mock dependencies
+vi.mock("i18next", () => ({
+	t: (key: string, options?: Record<string, unknown>) => {
+		if (key === "chat:commandExecution.terminalType") {
+			return `Type: ${options?.type}`
+		}
+		if (key === "chat:commandExecution.workingDirectory") {
+			return `Working directory: ${options?.cwd}`
+		}
+		if (key === "chat:commandExecution.terminalProfile") {
+			return `Profile: ${options?.profile}`
+		}
+		if (key === "chat:commandExecution.terminalId") {
+			return `Terminal: #${options?.id}`
+		}
+		return key
+	},
+}))
+
 vi.mock("react-use", () => ({
 	useEvent: vi.fn(),
 }))
@@ -51,7 +70,9 @@ const mockExtensionState = {
 }
 
 const ExtensionStateWrapper = ({ children }: { children: React.ReactNode }) => (
-	<ExtensionStateContext.Provider value={mockExtensionState as any}>{children}</ExtensionStateContext.Provider>
+	<ExtensionStateContext.Provider value={mockExtensionState as any}>
+		<TooltipProvider>{children}</TooltipProvider>
+	</ExtensionStateContext.Provider>
 )
 
 describe("CommandExecution", () => {
@@ -81,6 +102,58 @@ describe("CommandExecution", () => {
 
 		const terminalOutput = screen.getByTestId("terminal-output")
 		expect(terminalOutput).toHaveTextContent("Installing packages...")
+	})
+
+	it("should parse JSON approval payload and render terminal info", () => {
+		const approvalPayload = JSON.stringify({
+			command: "npm test",
+			terminalInfo: {
+				provider: "vscode",
+				cwd: "/workspace/src",
+				willReuseTerminal: true,
+				terminalId: 7,
+				terminalProfile: "Git Bash",
+			},
+		})
+
+		render(
+			<ExtensionStateWrapper>
+				<CommandExecution executionId="test-json" text={approvalPayload} />
+			</ExtensionStateWrapper>,
+		)
+
+		expect(screen.getByTestId("code-block")).toHaveTextContent("npm test")
+		expect(screen.getByText("chat:commandExecution.reuseTerminal")).toBeInTheDocument()
+		expect(screen.getByText("Type: VS Code")).toBeInTheDocument()
+		expect(screen.getByText("Working directory: /workspace/src")).toBeInTheDocument()
+		expect(screen.getByText("Profile: Git Bash")).toBeInTheDocument()
+		expect(screen.getByText("Terminal: #7")).toBeInTheDocument()
+	})
+
+	it("should focus a reused VS Code terminal", () => {
+		const approvalPayload = JSON.stringify({
+			command: "npm test",
+			terminalInfo: {
+				provider: "vscode",
+				cwd: "/workspace/src",
+				willReuseTerminal: true,
+				terminalId: 7,
+			},
+		})
+
+		render(
+			<ExtensionStateWrapper>
+				<CommandExecution executionId="test-focus" text={approvalPayload} />
+			</ExtensionStateWrapper>,
+		)
+
+		fireEvent.click(screen.getByText("chat:commandExecution.focusTerminal"))
+
+		expect(vscode.postMessage).toHaveBeenCalledWith({
+			type: "terminalOperation",
+			terminalOperation: "focus",
+			terminalId: 7,
+		})
 	})
 
 	it("should render with custom icon and title", () => {
