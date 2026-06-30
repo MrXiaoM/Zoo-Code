@@ -1,7 +1,6 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useDeepCompareEffect, useEvent } from "react-use"
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso"
-import bgDefaultPng from "@src/assets/bg-default.png?url"
 import removeMd from "remove-markdown"
 import useSound from "use-sound"
 import { LRUCache } from "lru-cache"
@@ -72,6 +71,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		return (window as unknown as { AUDIO_BASE_URI?: string }).AUDIO_BASE_URI || ""
 	})
 
+	const [imagesBaseUri] = useState(() => {
+		return (window as unknown as { IMAGES_BASE_URI?: string }).IMAGES_BASE_URI || ""
+	})
+
 	const { t } = useAppTranslation()
 	const modeShortcutText = `${isMac ? "⌘" : "Ctrl"} + . ${t("chat:forNextMode")}, ${isMac ? "⌘" : "Ctrl"} + Shift + . ${t("chat:forPreviousMode")}`
 
@@ -105,7 +108,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			return { display: "none" }
 		}
 
-		const bgUrl = backgroundImageUrl || bgDefaultPng
+		const bgUrl = backgroundImageUrl || `${imagesBaseUri}/bg-default.png`
 
 		const sizeMap: Record<string, string> = {
 			contain: "auto 100%",
@@ -137,6 +140,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		backgroundImagePosition,
 		backgroundImageOffset,
 		backgroundImageOpacity,
+		imagesBaseUri,
 	])
 
 	// Show a WarningRow when the user sends a message with a retired provider.
@@ -1714,14 +1718,21 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					</>
 				) : (
 					<div className="flex flex-col h-full p-6 min-h-0 overflow-y-auto gap-4 relative">
-						<div className="flex flex-col items-start gap-2 my-auto min-[400px]:px-6">
+						<div
+							className={`flex flex-col items-start gap-2 min-[400px]:px-6 ${
+								backgroundImageEnabled ? "mt-auto" : "my-auto"
+							}`}>
 							<VersionIndicator
 								onClick={() => setShowAnnouncementModal(true)}
 								className="absolute top-2 right-3 z-10"
 							/>
 							<div className="flex flex-col gap-4 w-full">
-								<RooHero />
-								<RooTips />
+								{!backgroundImageEnabled && (
+									<>
+										<RooHero />
+										<RooTips />
+									</>
+								)}
 								{/* Everyone should see their task history if any */}
 								{taskHistory.length > 0 && <HistoryPreview />}
 							</div>

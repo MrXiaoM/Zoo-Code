@@ -752,10 +752,11 @@ describe("ChatView - Version Indicator Tests", () => {
 describe("ChatView - Welcome Screen Display Tests", () => {
 	beforeEach(() => vi.clearAllMocks())
 
-	it("shows RooTips on the welcome screen regardless of task history or cloud auth", async () => {
+	it("shows RooTips on the welcome screen when background image is disabled", async () => {
 		const { getByTestId, queryByTestId } = renderChatView()
 
 		mockPostMessage({
+			backgroundImageEnabled: false,
 			cloudIsAuthenticated: false,
 			taskHistory: [
 				{ id: "1", ts: Date.now() - 6000 },
@@ -773,6 +774,41 @@ describe("ChatView - Welcome Screen Display Tests", () => {
 			expect(getByTestId("roo-tips")).toBeInTheDocument()
 		})
 		expect(queryByTestId("dismissible-upsell")).not.toBeInTheDocument()
+	})
+
+	it("hides RooHero and RooTips on the welcome screen when background image is enabled", async () => {
+		const { queryByTestId } = renderChatView()
+
+		mockPostMessage({
+			backgroundImageEnabled: true,
+			cloudIsAuthenticated: false,
+			taskHistory: [
+				{ id: "task-1", ts: Date.now() - 3000 },
+				{ id: "task-2", ts: Date.now() - 2000 },
+				{ id: "task-3", ts: Date.now() - 1000 },
+			],
+			clineMessages: [], // No active task
+		})
+
+		await waitFor(() => {
+			expect(queryByTestId("roo-hero")).not.toBeInTheDocument()
+			expect(queryByTestId("roo-tips")).not.toBeInTheDocument()
+		})
+	})
+
+	it("hides RooHero and RooTips on the welcome screen by default since backgroundImageEnabled defaults to true", async () => {
+		const { queryByTestId } = renderChatView()
+
+		mockPostMessage({
+			cloudIsAuthenticated: false,
+			taskHistory: [],
+			clineMessages: [], // No active task
+		})
+
+		await waitFor(() => {
+			expect(queryByTestId("roo-hero")).not.toBeInTheDocument()
+			expect(queryByTestId("roo-tips")).not.toBeInTheDocument()
+		})
 	})
 
 	it("does not show welcome content when there is an active task", async () => {
