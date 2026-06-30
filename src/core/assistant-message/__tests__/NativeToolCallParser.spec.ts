@@ -456,7 +456,10 @@ describe("NativeToolCallParser", () => {
 				NativeToolCallParser.startStreamingToolCall(id, "apply_diff")
 
 				const fullWidthBar = "\uFF5C"
-				const diffBody = `${"<".repeat(7)} SEARCH\n:start_line:1\nfoo\n${"=".repeat(7)}\nbar\n${">".repeat(7)} REPLACE`
+				const MARK_SEARCH2 = `${"<".repeat(7)} SEARCH`
+				const MARK_SEP2 = "=".repeat(7)
+				const MARK_REPLACE2 = `${">".repeat(7)} REPLACE`
+				const diffBody = `${MARK_SEARCH2}\n:start_line:1\nfoo\n${MARK_SEP2}\nbar\n${MARK_REPLACE2}`
 				const appendedDiff =
 					diffBody +
 					`\n<${fullWidthBar}${fullWidthBar}DSML${fullWidthBar}${fullWidthBar}parameter name="path" string="true">src/recovered.ts`
@@ -471,6 +474,184 @@ describe("NativeToolCallParser", () => {
 					const nativeArgs = result.nativeArgs as { path: string; diff: string }
 					expect(nativeArgs.path).toBe("src/recovered.ts")
 					expect(nativeArgs.diff).toBe(diffBody)
+				}
+			})
+		})
+	})
+
+	describe("normalizePathParams (via parseToolCall)", () => {
+		describe("path tools accept file_path as fallback", () => {
+			it("normalizes file_path to path for write_to_file when path is absent", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_01",
+					name: "write_to_file" as const,
+					arguments: JSON.stringify({ file_path: "src/test.ts", content: "test" }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { path: string; content: string }
+					expect(na.path).toBe("src/test.ts")
+				}
+			})
+
+			it("keeps path when both path and file_path are present (canonical wins)", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_02",
+					name: "write_to_file" as const,
+					arguments: JSON.stringify({
+						path: "src/canonical.ts",
+						file_path: "src/fallback.ts",
+						content: "test",
+					}),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { path: string; content: string }
+					expect(na.path).toBe("src/canonical.ts")
+				}
+			})
+
+			it("normalizes file_path to path for apply_diff when path is absent", () => {
+				const MARK_SEARCH3 = `${"<".repeat(7)} SEARCH`
+				const MARK_SEP3 = "=".repeat(7)
+				const MARK_REPLACE3 = `${">".repeat(7)} REPLACE`
+				const diff = `${MARK_SEARCH3}\ntest\n${MARK_SEP3}\nnew\n${MARK_REPLACE3}`
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_03",
+					name: "apply_diff" as const,
+					arguments: JSON.stringify({ file_path: "src/test.ts", diff }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { path: string; diff: string }
+					expect(na.path).toBe("src/test.ts")
+				}
+			})
+
+			it("normalizes file_path to path for search_files when path is absent", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_04",
+					name: "search_files" as const,
+					arguments: JSON.stringify({ file_path: "src", regex: "function" }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { path: string; regex: string }
+					expect(na.path).toBe("src")
+				}
+			})
+
+			it("normalizes file_path to path for list_files when path is absent", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_05",
+					name: "list_files" as const,
+					arguments: JSON.stringify({ file_path: "src", recursive: true }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { path: string; recursive: boolean }
+					expect(na.path).toBe("src")
+				}
+			})
+
+			it("normalizes file_path to path for read_file when path is absent", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_06",
+					name: "read_file" as const,
+					arguments: JSON.stringify({ file_path: "src/test.ts" }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { path: string }
+					expect(na.path).toBe("src/test.ts")
+				}
+			})
+
+			it("normalizes file_path to path for codebase_search when path is absent", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_07",
+					name: "codebase_search" as const,
+					arguments: JSON.stringify({ file_path: "src/auth", query: "login" }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { path: string; query: string }
+					expect(na.path).toBe("src/auth")
+				}
+			})
+		})
+
+		describe("file_path tools accept path as fallback", () => {
+			it("normalizes path to file_path for edit when file_path is absent", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_08",
+					name: "edit" as const,
+					arguments: JSON.stringify({ path: "src/test.ts", old_string: "old", new_string: "new" }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { file_path: string; old_string: string; new_string: string }
+					expect(na.file_path).toBe("src/test.ts")
+				}
+			})
+
+			it("keeps file_path when both file_path and path are present (canonical wins)", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_09",
+					name: "edit" as const,
+					arguments: JSON.stringify({
+						file_path: "src/canonical.ts",
+						path: "src/fallback.ts",
+						old_string: "old",
+						new_string: "new",
+					}),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { file_path: string; old_string: string; new_string: string }
+					expect(na.file_path).toBe("src/canonical.ts")
+				}
+			})
+
+			it("normalizes path to file_path for edit_file when file_path is absent", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_10",
+					name: "edit_file" as const,
+					arguments: JSON.stringify({ path: "src/test.ts", old_string: "old", new_string: "new" }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { file_path: string; old_string: string; new_string: string }
+					expect(na.file_path).toBe("src/test.ts")
+				}
+			})
+
+			it("normalizes path to file_path for search_replace when file_path is absent", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_11",
+					name: "search_replace" as const,
+					arguments: JSON.stringify({ path: "src/test.ts", old_string: "old", new_string: "new" }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { file_path: string; old_string: string; new_string: string }
+					expect(na.file_path).toBe("src/test.ts")
+				}
+			})
+		})
+
+		describe("tools not in path/file_path sets are unaffected", () => {
+			it("passes through args unchanged for execute_command", () => {
+				const result = NativeToolCallParser.parseToolCall({
+					id: "toolu_np_12",
+					name: "execute_command" as const,
+					arguments: JSON.stringify({ command: "npm test", path: "should-be-ignored" }),
+				})
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					const na = result.nativeArgs as { command: string; cwd?: string }
+					expect(na.command).toBe("npm test")
+					expect((na as Record<string, unknown>).cwd).toBeUndefined()
 				}
 			})
 		})

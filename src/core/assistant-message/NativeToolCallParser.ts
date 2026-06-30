@@ -25,6 +25,26 @@ import { MCP_TOOL_PREFIX, MCP_TOOL_SEPARATOR, parseMcpToolName, normalizeMcpTool
 type NativeArgsFor<TName extends ToolName> = TName extends keyof NativeToolArgs ? NativeToolArgs[TName] : never
 
 /**
+ * Tools where the canonical parameter is "path".
+ * If a model passes "file_path" instead, it will be normalized to "path".
+ */
+const TOOLS_CANONICAL_PATH = new Set<ToolName>([
+	"read_file",
+	"write_to_file",
+	"apply_diff",
+	"search_files",
+	"list_files",
+	"codebase_search",
+	"generate_image",
+])
+
+/**
+ * Tools where the canonical parameter is "file_path".
+ * If a model passes "path" instead, it will be normalized to "file_path".
+ */
+const TOOLS_CANONICAL_FILE_PATH = new Set<ToolName>(["edit", "search_and_replace", "search_replace", "edit_file"])
+
+/**
  * Parser for native tool calls (OpenAI-style function calling).
  * Converts native tool call format to ToolUse format for compatibility
  * with existing tool execution infrastructure.
@@ -72,6 +92,36 @@ export class NativeToolCallParser {
 			deltaBuffer: string[]
 		}
 	>()
+
+	/**
+	 * Normalize path/file_path parameters for tools that accept either.
+	 *
+	 * Some models confuse "path" (used by read_file, write_to_file, apply_diff,
+	 * search_files, list_files, codebase_search, generate_image) with "file_path"
+	 * (used by edit, search_and_replace, search_replace, edit_file) and vice versa.
+	 *
+	 * This pre-processor handles the cross-mapping in both directions:
+	 * - For tools whose canonical param is "path":
+	 *     args.path ??= args.file_path   (canonical first, fallback to file_path)
+	 * - For tools whose canonical param is "file_path":
+	 *     args.file_path ??= args.path   (canonical first, fallback to path)
+	 *
+	 * @param toolName - The resolved (canonical) tool name
+	 * @param args     - The parsed arguments object (mutated in place)
+	 */
+	private static normalizePathParams(toolName: ToolName, args: Record<string, unknown>): void {
+		if (TOOLS_CANONICAL_PATH.has(toolName)) {
+			// Canonical is "path", fallback is "file_path"
+			if (args.path === undefined && args.file_path !== undefined) {
+				args.path = args.file_path
+			}
+		} else if (TOOLS_CANONICAL_FILE_PATH.has(toolName)) {
+			// Canonical is "file_path", fallback is "path"
+			if (args.file_path === undefined && args.path !== undefined) {
+				args.file_path = args.path
+			}
+		}
+	}
 
 	private static coerceOptionalBoolean(value: unknown): boolean | undefined {
 		if (typeof value === "boolean") {
@@ -423,6 +473,10 @@ export class NativeToolCallParser {
 		partial: boolean,
 		originalName?: string,
 	): ToolUse | null {
+		// Normalize path/file_path parameters so both streaming partials
+		// and final tool calls benefit from the bidirectional fallback.
+		this.normalizePathParams(name, partialArgs)
+
 		// Build stringified params for display/partial-progress UI.
 		// NOTE: For streaming partial updates, we MUST populate params even for complex types
 		// because tool.handlePartial() methods rely on params to show UI updates.
@@ -760,6 +814,11 @@ export class NativeToolCallParser {
 		try {
 			// Parse the arguments JSON string
 			const args = toolCall.arguments === "" ? {} : JSON.parse(toolCall.arguments)
+
+			// Normalize path/file_path parameters for tools that mix them up.
+			// Handles bidirectional mapping: path tools accept file_path, file_path tools accept path.
+			// Canonical parameter takes priority; the fallback is only used when canonical is absent.
+			this.normalizePathParams(resolvedName, args)
 
 			// Build stringified params for display/logging.
 			// Tool execution MUST use nativeArgs (typed) and does not support legacy fallbacks.
