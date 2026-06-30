@@ -1691,6 +1691,24 @@ export class ClineProvider
 		}
 	}
 
+	/**
+	 * Loads an API configuration's settings for editing purposes without changing
+	 * the currently active profile in the chat interface.
+	 *
+	 * Unlike `activateProviderProfile`, this only loads the configuration data
+	 * (apiConfiguration) into the webview state and does NOT update
+	 * `currentApiConfigName`, the task's API handler, or the sticky profile.
+	 */
+	async loadApiConfigForEdit(name: string) {
+		const profile = await this.providerSettingsManager.getProfile({ name })
+		const { id: _id, name: _name, ...providerSettings } = profile
+
+		// Only copies the provider settings into the context so the SettingsView
+		// can render the configuration; the active profile name stays unchanged.
+		this.contextProxy.setProviderSettings(providerSettings)
+		await this.postStateToWebview()
+	}
+
 	async updateCustomInstructions(instructions?: string) {
 		// User may be clearing the field.
 		await this.updateGlobalState("customInstructions", instructions || undefined)

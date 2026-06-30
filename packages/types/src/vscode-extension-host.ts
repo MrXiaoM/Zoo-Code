@@ -627,6 +627,7 @@ export interface WebviewMessage {
 		| "deleteRule"
 		| "openRuleFile"
 		| "openRulesDirectory"
+		| "loadApiConfigForEdit"
 	text?: string
 	taskId?: string
 	editedMessageContent?: string

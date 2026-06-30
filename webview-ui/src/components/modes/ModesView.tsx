@@ -79,12 +79,15 @@ const ModesView = () => {
 		mcpServers,
 	} = useExtensionState()
 
-	// Use a local state to track the visually active mode
-	// This prevents flickering when switching modes rapidly by:
-	// 1. Updating the UI immediately when a mode is clicked
-	// 2. Not syncing with the backend mode state (which would cause flickering)
-	// 3. Still sending the mode change to the backend for persistence
+	// Use a local state to track the visually active mode.
+	// This is intentionally decoupled from the global `mode` so that mode
+	// selection in the settings page does not affect the active mode in
+	// the chat interface.
 	const [visualMode, setVisualMode] = useState(mode)
+
+	// Local API config state, isolated from global currentApiConfigName so
+	// that config selection in the ModesView does not affect the chat interface.
+	const [editingApiConfigName, setEditingApiConfigName] = useState(currentApiConfigName)
 
 	// Build modes fresh each render so search reflects inline rename updates immediately
 	const modes = getAllModes(customModes)
@@ -172,14 +175,9 @@ const ModesView = () => {
 		[],
 	)
 
-	const switchMode = useCallback((slug: string) => {
-		vscode.postMessage({
-			type: "mode",
-			text: slug,
-		})
-	}, [])
-
-	// Handle mode switching with explicit state initialization
+	// Handle mode switching with explicit state initialization.
+	// Only updates the local visualMode — does NOT broadcast to the global
+	// mode, keeping the chat interface independent.
 	const handleModeSwitch = useCallback(
 		(modeConfig: ModeConfig) => {
 			if (modeConfig.slug === visualMode) return // Prevent unnecessary updates
@@ -187,19 +185,15 @@ const ModesView = () => {
 			// Immediately update visual state for instant feedback
 			setVisualMode(modeConfig.slug)
 
-			// Then send the mode change message to the backend
-			switchMode(modeConfig.slug)
-
 			// Exit tools edit mode when switching modes
 			setIsToolsEditMode(false)
 		},
-		[visualMode, switchMode],
+		[visualMode],
 	)
 
 	// Refs to track latest state/functions for message handler (which has no dependencies)
 	const handleModeSwitchRef = useRef(handleModeSwitch)
 	const customModesRef = useRef(customModes)
-	const switchModeRef = useRef(switchMode)
 
 	// Update refs when dependencies change
 	useEffect(() => {
@@ -209,31 +203,6 @@ const ModesView = () => {
 	useEffect(() => {
 		customModesRef.current = customModes
 	}, [customModes])
-
-	useEffect(() => {
-		switchModeRef.current = switchMode
-	}, [switchMode])
-
-	// Sync visualMode with backend mode changes to prevent desync.
-	//
-	// Flicker A guard: a state push from the host can arrive mid-switch
-	// carrying a stale `mode` field (the previous mode), which would briefly
-	// revert `visualMode` and cause the entire detail panel to flash to the
-	// old mode for one frame. We compare against a ref of the current
-	// `visualMode` (rather than reading it from the closure) so we can keep
-	// `[mode]` as the only dep — the effect should react ONLY to external
-	// host-driven mode changes, not to our own optimistic `setVisualMode`
-	// in `handleModeSwitch`. Using a ref avoids the need for a lint-rule
-	// disable on the exhaustive-deps check.
-	const visualModeRef = useRef(visualMode)
-	useEffect(() => {
-		visualModeRef.current = visualMode
-	}, [visualMode])
-	useEffect(() => {
-		if (mode && mode !== visualModeRef.current) {
-			setVisualMode(mode)
-		}
-	}, [mode])
 
 	// Handler for popover open state change
 	const onOpenChange = useCallback((open: boolean) => {
@@ -443,9 +412,8 @@ const ModesView = () => {
 		}
 
 		updateCustomMode(newModeSlug, newMode)
-		// Immediately select the newly created mode in the UI
+		// Immediately select the newly created mode in the UI (local only).
 		setVisualMode(newModeSlug)
-		switchMode(newModeSlug)
 		setIsCreateModeDialogOpen(false)
 		resetFormState()
 	}, [
@@ -459,7 +427,6 @@ const ModesView = () => {
 		newModeSource,
 		newModeAllowedMcpServers,
 		updateCustomMode,
-		switchMode,
 		resetFormState,
 	])
 
@@ -562,9 +529,8 @@ const ModesView = () => {
 						if (importedMode) {
 							handleModeSwitchRef.current(importedMode)
 						} else {
-							// Fallback: slug not yet in state (race condition) - select default mode
+							// Fallback: slug not yet in state (race condition) - select default mode locally
 							setVisualMode(defaultModeSlug)
-							switchModeRef.current?.(defaultModeSlug)
 						}
 					}
 				} else {
@@ -595,7 +561,7 @@ const ModesView = () => {
 
 		window.addEventListener("message", handler)
 		return () => window.removeEventListener("message", handler)
-	}, [checkRulesDirectory, switchMode])
+	}, [checkRulesDirectory])
 
 	const handleAgentReset = (
 		modeSlug: string,
@@ -935,10 +901,11 @@ const ModesView = () => {
 						</div>
 						<div className="mb-2">
 							<Select
-								value={currentApiConfigName}
+								value={editingApiConfigName}
 								onValueChange={(value) => {
+									setEditingApiConfigName(value)
 									vscode.postMessage({
-										type: "loadApiConfiguration",
+										type: "loadApiConfigForEdit",
 										text: value,
 									})
 								}}>

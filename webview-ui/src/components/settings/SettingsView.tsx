@@ -152,6 +152,10 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 
 	const [cachedState, setCachedState] = useState(() => extensionState)
 
+	// Local editing profile name, isolated from the global currentApiConfigName
+	// so that profile selection in settings does not affect the chat interface.
+	const [editingProfileName, setEditingProfileName] = useState(currentApiConfigName)
+
 	const {
 		alwaysAllowReadOnly,
 		alwaysAllowReadOnlyOutsideWorkspace,
@@ -226,16 +230,33 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 
 	const apiConfiguration = useMemo(() => cachedState.apiConfiguration ?? {}, [cachedState.apiConfiguration])
 
+	// Track the last apiConfiguration reference to detect changes from
+	// loadApiConfigForEdit (which updates the config data but not currentApiConfigName).
+	const lastApiConfigurationRef = useRef<ProviderSettings | undefined>(extensionState.apiConfiguration)
+
 	useEffect(() => {
-		// Update only when currentApiConfigName is changed.
-		// Expected to be triggered by loadApiConfiguration/upsertApiConfiguration.
-		if (prevApiConfigName.current === currentApiConfigName) {
+		const apiConfigChanged = lastApiConfigurationRef.current !== extensionState.apiConfiguration
+		lastApiConfigurationRef.current = extensionState.apiConfiguration
+
+		// Skip if neither currentApiConfigName nor apiConfiguration changed.
+		if (!apiConfigChanged && prevApiConfigName.current === currentApiConfigName) {
 			return
 		}
 
-		setCachedState((prevCachedState) => ({ ...prevCachedState, ...extensionState }))
-		prevApiConfigName.current = currentApiConfigName
-		setChangeDetected(false)
+		// Only merge apiConfiguration into cachedState. Do NOT reset the
+		// entire cachedState as that would discard user's in-progress edits.
+		setCachedState((prevCachedState) => ({
+			...prevCachedState,
+			apiConfiguration: extensionState.apiConfiguration ?? prevCachedState.apiConfiguration,
+		}))
+
+		// Reset change-detection only when the active profile name changed
+		// (i.e. the chat interface switched configs). For loadApiConfigForEdit
+		// the user is actively editing, so keep the dirty flag.
+		if (prevApiConfigName.current !== currentApiConfigName) {
+			prevApiConfigName.current = currentApiConfigName
+			setChangeDetected(false)
+		}
 	}, [currentApiConfigName, extensionState])
 
 	// Bust the cache when settings are imported.
@@ -454,7 +475,14 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 
 			// These have more complex logic so they aren't (yet) handled
 			// by the `updateSettings` message.
-			vscode.postMessage({ type: "upsertApiConfiguration", text: currentApiConfigName, apiConfiguration })
+			// Only activate (switch chat to) this profile if it's the currently active one.
+			const isActiveProfile = editingProfileName === currentApiConfigName
+			vscode.postMessage({
+				type: "upsertApiConfiguration",
+				text: editingProfileName,
+				apiConfiguration,
+				values: { activate: isActiveProfile },
+			})
 			vscode.postMessage({ type: "telemetrySetting", text: telemetrySetting })
 			vscode.postMessage({ type: "debugSetting", bool: cachedState.debug })
 
@@ -768,13 +796,13 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 
 								<Section>
 									<ApiConfigManager
-										currentApiConfigName={currentApiConfigName}
+										currentApiConfigName={editingProfileName}
 										listApiConfigMeta={listApiConfigMeta}
-										onSelectConfig={(configName: string) =>
-											checkUnsaveChanges(() =>
-												vscode.postMessage({ type: "loadApiConfiguration", text: configName }),
-											)
-										}
+										onSelectConfig={(configName: string) => {
+											setEditingProfileName(configName)
+											setChangeDetected(true)
+											vscode.postMessage({ type: "loadApiConfigForEdit", text: configName })
+										}}
 										onDeleteConfig={(configName: string) =>
 											vscode.postMessage({ type: "deleteApiConfiguration", text: configName })
 										}

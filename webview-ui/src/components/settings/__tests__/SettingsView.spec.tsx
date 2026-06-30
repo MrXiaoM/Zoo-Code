@@ -14,11 +14,16 @@ vi.mock("@src/utils/vscode", () => ({ vscode: { postMessage: vi.fn() } }))
 
 vi.mock("../ApiConfigManager", () => ({
 	__esModule: true,
-	default: ({ currentApiConfigName }: any) => (
-		<div data-testid="api-config-management">
-			<span>Current config: {currentApiConfigName}</span>
-		</div>
-	),
+	default: ({ currentApiConfigName, onSelectConfig }: any) => {
+		return (
+			<div data-testid="api-config-management">
+				<span>Current config: {currentApiConfigName}</span>
+				<button data-testid="switch-config-btn" onClick={() => onSelectConfig?.("other-profile")}>
+					Switch
+				</button>
+			</div>
+		)
+	},
 }))
 
 vi.mock("@vscode/webview-ui-toolkit/react", () => ({
@@ -71,6 +76,16 @@ vi.mock("@vscode/webview-ui-toolkit/react", () => ({
 			data-testid={dataTestId}
 			role="textbox"
 		/>
+	),
+	VSCodeDropdown: ({ children, value, onChange, "data-testid": dataTestId }: any) => (
+		<select value={value} onChange={onChange} data-testid={dataTestId}>
+			{children}
+		</select>
+	),
+	VSCodeOption: ({ children, value, "data-testid": dataTestId }: any) => (
+		<option value={value} data-testid={dataTestId}>
+			{children}
+		</option>
 	),
 }))
 
@@ -332,7 +347,22 @@ const renderSettingsView = (initialState: any = {}) => {
 	// Helper to get elements within the settings content (not the indexing container)
 	const getSettingsContent = () => screen.getByTestId("settings-content")
 
-	return { onDone, activateTab, getSettingsContent }
+	// Helper to re-render with different state for isolation testing
+	const rerenderWithState = (newState: any = {}) => {
+		const ret = render(
+			<ExtensionStateContextProvider>
+				<QueryClientProvider client={queryClient}>
+					<SettingsView onDone={onDone} />
+				</QueryClientProvider>
+			</ExtensionStateContextProvider>,
+		)
+		act(() => {
+			mockPostMessage(newState)
+		})
+		return ret
+	}
+
+	return { onDone, activateTab, getSettingsContent, rerenderWithState }
 }
 
 describe("SettingsView - Sound Settings", () => {
@@ -838,5 +868,129 @@ describe("SettingsView - agentName", () => {
 
 		// Verify unsaved changes dialog appears
 		expect(screen.getByText("settings:unsavedChangesDialog.title")).toBeInTheDocument()
+	})
+})
+
+describe("SettingsView - profile isolation", () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it("uses loadApiConfigForEdit when switching profile in settings", () => {
+		renderSettingsView()
+
+		// Navigate to providers tab
+		const providersTab = screen.getByTestId("tab-providers")
+		fireEvent.click(providersTab)
+
+		// Click the switch config button which triggers onSelectConfig in the mock
+		const switchBtn = screen.getByTestId("switch-config-btn")
+		fireEvent.click(switchBtn)
+
+		// Should send loadApiConfigForEdit, NOT loadApiConfiguration
+		expect(vscode.postMessage).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "loadApiConfigForEdit",
+				text: "other-profile",
+			}),
+		)
+
+		// Must NOT send loadApiConfiguration (which would switch the active chat profile)
+		const loadApiConfigurationCalls = (vscode.postMessage as any).mock.calls.filter(
+			(call: any[]) => call[0]?.type === "loadApiConfiguration",
+		)
+		expect(loadApiConfigurationCalls).toHaveLength(0)
+	})
+
+	it("saves with editingProfileName and activate=false for non-active profile", () => {
+		renderSettingsView({ currentApiConfigName: "active-profile" })
+
+		// Navigate to providers tab
+		const providersTab = screen.getByTestId("tab-providers")
+		fireEvent.click(providersTab)
+
+		// Switch to a non-active profile
+		const switchBtn = screen.getByTestId("switch-config-btn")
+		fireEvent.click(switchBtn)
+
+		// Click Save
+		const saveButton = screen.getByTestId("save-button")
+		// First clear resetCalls from initial setup
+		vi.clearAllMocks()
+		fireEvent.click(saveButton)
+
+		// Should upsert to "other-profile" with activate=false (not the active one)
+		expect(vscode.postMessage).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "upsertApiConfiguration",
+				text: "other-profile",
+				values: { activate: false },
+			}),
+		)
+	})
+
+	it("saves with activate=true when editing the active profile", () => {
+		renderSettingsView({ currentApiConfigName: "default" })
+
+		// Navigate to providers tab
+		const providersTab = screen.getByTestId("tab-providers")
+		fireEvent.click(providersTab)
+
+		// Click Save directly (editingProfileName === currentApiConfigName === "default")
+		const saveButton = screen.getByTestId("save-button")
+		vi.clearAllMocks()
+		fireEvent.click(saveButton)
+
+		// Should upsert with activate=true for the active profile
+		expect(vscode.postMessage).toHaveBeenCalledWith(
+			expect.objectContaining({
+				type: "upsertApiConfiguration",
+				text: "default",
+				values: { activate: true },
+			}),
+		)
+	})
+
+	it("does not call loadApiConfiguration from ApiConfigManager onSelectConfig", () => {
+		renderSettingsView()
+
+		// Navigate to providers tab
+		const providersTab = screen.getByTestId("tab-providers")
+		fireEvent.click(providersTab)
+
+		// Trigger profile switch
+		const switchBtn = screen.getByTestId("switch-config-btn")
+		fireEvent.click(switchBtn)
+
+		// Verify loadApiConfiguration was never called
+		const allCalls = (vscode.postMessage as any).mock.calls.flat()
+		const hasLoadApiConfig = allCalls.some((call: any) => call?.type === "loadApiConfiguration")
+		expect(hasLoadApiConfig).toBe(false)
+	})
+
+	it("does NOT reset cachedState when global currentApiConfigName changes", () => {
+		renderSettingsView({ currentApiConfigName: "default" })
+
+		// Navigate to providers first so it renders
+		const providersTab = screen.getByTestId("tab-providers")
+		fireEvent.click(providersTab)
+
+		// The ApiConfigManager should show "default" (our editingProfileName)
+		const configDisplays = screen.getAllByTestId("api-config-management")
+		const lastDisplay = configDisplays[configDisplays.length - 1]
+		expect(lastDisplay.textContent).toContain("default")
+
+		// Simulate chat interface switching to a different profile via state update.
+		// This should NOT change what ApiConfigManager shows because we use
+		// editingProfileName which is independent of global currentApiConfigName.
+		act(() => {
+			mockPostMessage({ currentApiConfigName: "chat-switched-profile" })
+		})
+
+		// After the state update, the display should still show "default"
+		const afterDisplays = screen.getAllByTestId("api-config-management")
+		const afterLastDisplay = afterDisplays[afterDisplays.length - 1]
+		expect(afterLastDisplay.textContent).toContain("default")
+		expect(afterLastDisplay.textContent).not.toContain("chat-switched-profile")
 	})
 })

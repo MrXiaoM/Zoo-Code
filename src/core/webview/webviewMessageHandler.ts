@@ -2022,7 +2022,8 @@ export const webviewMessageHandler = async (
 			break
 		case "upsertApiConfiguration":
 			if (message.text && message.apiConfiguration) {
-				await provider.upsertProviderProfile(message.text, message.apiConfiguration)
+				const activate = (message.values as { activate?: boolean } | undefined)?.activate ?? true
+				await provider.upsertProviderProfile(message.text, message.apiConfiguration, activate)
 			}
 			break
 		case "renameApiConfiguration":
@@ -2074,6 +2075,18 @@ export const webviewMessageHandler = async (
 				} catch (error) {
 					provider.log(
 						`Error load api configuration by ID: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
+					)
+					vscode.window.showErrorMessage(t("common:errors.load_api_config"))
+				}
+			}
+			break
+		case "loadApiConfigForEdit":
+			if (message.text) {
+				try {
+					await provider.loadApiConfigForEdit(message.text)
+				} catch (error) {
+					provider.log(
+						`Error load api configuration for edit: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
 					)
 					vscode.window.showErrorMessage(t("common:errors.load_api_config"))
 				}

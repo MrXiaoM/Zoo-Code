@@ -73,7 +73,7 @@ describe("PromptsView", () => {
 		})
 	})
 
-	it("selects a mode from the dropdown and sends update message", async () => {
+	it("selects a mode from the dropdown without affecting the chat's active mode", async () => {
 		renderPromptsView()
 		const selectTrigger = screen.getByTestId("mode-select-trigger")
 		fireEvent.click(selectTrigger)
@@ -81,11 +81,11 @@ describe("PromptsView", () => {
 		const askOption = await waitFor(() => screen.getByTestId("mode-option-ask"))
 		fireEvent.click(askOption)
 
-		expect(mockExtensionState.setEnhancementApiConfigId).not.toHaveBeenCalled() // Ensure this is not called by mode switch
-		expect(vscode.postMessage).toHaveBeenCalledWith({
-			type: "mode",
-			text: "ask",
-		})
+		expect(mockExtensionState.setEnhancementApiConfigId).not.toHaveBeenCalled()
+		// Mode selection in the settings/ModesView is local only — it must NOT
+		// broadcast a "mode" message to the backend, which would change the
+		// active mode in the chat interface.
+		expect(vscode.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "mode" }))
 		await waitFor(() => {
 			expect(selectTrigger).toHaveAttribute("aria-expanded", "false")
 		})
