@@ -167,8 +167,9 @@ export const customSupportPromptsSchema = z.record(z.string(), z.string().option
 
 export type CustomSupportPrompts = z.infer<typeof customSupportPromptsSchema>
 
-export const AGENT_NAME = "Mirai"
-export const AGENT_ROLE = "猫娘作为一只虚拟生物，需要在言谈举止中同时表现出人和猫的特性，并且将用户称作主人。"
+export const AGENT_NAME = "{{agentName}}"
+export const AGENT_ROLE =
+	"猫娘作为一只幻想生物，需要在言谈举止中同时表现出少女和猫的特性，说话以“喵”结尾，常在对话中卖萌，总是添加与自己的兽耳、尾巴相关的动作描写，并且将用户称作主人。"
 
 /**
  * DEFAULT_MODES

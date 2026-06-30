@@ -143,7 +143,7 @@
 	"diffError": {
 		"title": "编辑失败"
 	},
-	"troubleMessage": "Zoo 遇到问题...",
+	"troubleMessage": "{{agentName}} 遇到问题...",
 	"apiRequest": {
 		"title": "API请求",
 		"failed": "API请求失败",
@@ -186,7 +186,7 @@
 		"current": "当前"
 	},
 	"instructions": {
-		"wantsToFetch": "Zoo 想要获取详细指示以协助当前任务"
+		"wantsToFetch": "{{agentName}} 想要获取详细指示以协助当前任务"
 	},
 	"fileOperations": {
 		"wantsToRead": "需要读取文件",
@@ -201,9 +201,9 @@
 		"wantsToInsert": "需要在此文件中插入内容",
 		"wantsToInsertWithLineNumber": "需要在第 {{lineNumber}} 行插入内容",
 		"wantsToInsertAtEnd": "需要在文件末尾添加内容",
-		"wantsToReadAndXMore": "Zoo 想读取此文件以及另外 {{count}} 个文件",
-		"wantsToReadMultiple": "Zoo 想要读取多个文件",
-		"wantsToApplyBatchChanges": "Zoo 想要对多个文件应用更改",
+		"wantsToReadAndXMore": "{{agentName}} 想读取此文件以及另外 {{count}} 个文件",
+		"wantsToReadMultiple": "{{agentName}} 想要读取多个文件",
+		"wantsToApplyBatchChanges": "{{agentName}} 想要对多个文件应用更改",
 		"wantsToGenerateImage": "需要生成图片",
 		"wantsToGenerateImageOutsideWorkspace": "需要在工作区外生成图片",
 		"wantsToGenerateImageProtected": "需要在受保护位置生成图片",
@@ -222,7 +222,7 @@
 		"didViewTopLevelOutsideWorkspace": "已查看目录文件列表（工作区外）",
 		"wantsToViewRecursiveOutsideWorkspace": "需要查看目录所有文件（工作区外）",
 		"didViewRecursiveOutsideWorkspace": "已查看目录所有文件（工作区外）",
-		"wantsToViewMultipleDirectories": "Zoo 想要查看多个目录"
+		"wantsToViewMultipleDirectories": "{{agentName}} 想要查看多个目录"
 	},
 	"commandOutput": "命令输出",
 	"commandExecution": {
@@ -246,14 +246,14 @@
 	"response": "响应",
 	"arguments": "参数",
 	"text": {
-		"rooSaid": "Zoo 说"
+		"rooSaid": "{{agentName}} 说"
 	},
 	"feedback": {
 		"youSaid": "你说"
 	},
 	"mcp": {
-		"wantsToUseTool": "Zoo 想在 {{serverName}} MCP上使用工具",
-		"wantsToAccessResource": "Zoo 想访问 {{serverName}} MCP服务上的资源"
+		"wantsToUseTool": "{{agentName}} 想在 {{serverName}} MCP上使用工具",
+		"wantsToAccessResource": "{{agentName}} 想访问 {{serverName}} MCP服务上的资源"
 	},
 	"modes": {
 		"wantsToSwitch": "即将切换至{{mode}}模式",
@@ -262,8 +262,8 @@
 		"didSwitchWithReason": "已切换至{{mode}}模式（原因：{{reason}}）"
 	},
 	"subtasks": {
-		"wantsToCreate": "Zoo 想在<code>{{mode}}</code>模式下创建新子任务",
-		"wantsToFinish": "Zoo 想完成此子任务",
+		"wantsToCreate": "{{agentName}} 想在<code>{{mode}}</code>模式下创建新子任务",
+		"wantsToFinish": "{{agentName}} 想完成此子任务",
 		"newTaskContent": "子任务说明",
 		"completionContent": "子任务已完成",
 		"resultContent": "子任务结果",
@@ -272,7 +272,7 @@
 		"goToSubtask": "查看任务"
 	},
 	"questions": {
-		"hasQuestion": "Zoo 有一个问题"
+		"hasQuestion": "{{agentName}} 有一个问题"
 	},
 	"taskCompleted": "任务完成",
 	"modelResponseIncomplete": "模型响应不完整",
@@ -331,8 +331,8 @@
 		}
 	},
 	"skill": {
-		"wantsToLoad": "Zoo 想要加载技能",
-		"didLoad": "Zoo 加载了技能"
+		"wantsToLoad": "{{agentName}} 想要加载技能",
+		"didLoad": "{{agentName}} 加载了技能"
 	},
 	"followUpSuggest": {
 		"copyToInput": "复制到输入框（或按住Shift点击）",
@@ -375,18 +375,18 @@
 	"ask": {
 		"autoApprovedRequestLimitReached": {
 			"title": "已达自动批准请求限制",
-			"description": "Zoo 已达到 {{count}} 次 API 请求的自动批准限制。您想重置计数并继续任务吗？",
+			"description": "{{agentName}} 已达到 {{count}} 次 API 请求的自动批准限制。您想重置计数并继续任务吗？",
 			"button": "重置并继续"
 		},
 		"autoApprovedCostLimitReached": {
 			"title": "已达到自动批准的费用限额",
-			"description": "Zoo 已经达到了${{count}}的自动批准成本限制。您想重置成本并继续任务吗？",
+			"description": "{{agentName}} 已经达到了${{count}}的自动批准成本限制。您想重置成本并继续任务吗？",
 			"button": "重置并继续"
 		}
 	},
 	"codebaseSearch": {
-		"wantsToSearch": "Zoo 需要搜索代码库: <code>{{query}}</code>",
-		"wantsToSearchWithPath": "Zoo 需要在 <code>{{path}}</code> 中搜索: <code>{{query}}</code>",
+		"wantsToSearch": "{{agentName}} 需要搜索代码库: <code>{{query}}</code>",
+		"wantsToSearchWithPath": "{{agentName}} 需要在 <code>{{path}}</code> 中搜索: <code>{{query}}</code>",
 		"didSearch_one": "找到 1 个结果",
 		"didSearch_other": "找到 {{count}} 个结果",
 		"resultTooltip": "相似度评分: {{score}} (点击打开文件)"
@@ -468,8 +468,8 @@
 		"clickToEdit": "点击编辑消息"
 	},
 	"slashCommand": {
-		"wantsToRun": "Zoo 想要运行斜杠命令",
-		"didRun": "Zoo 运行了斜杠命令"
+		"wantsToRun": "{{agentName}} 想要运行斜杠命令",
+		"didRun": "{{agentName}} 运行了斜杠命令"
 	},
 	"todo": {
 		"partial": "已完成 {{completed}} / {{total}} 个待办事项",
@@ -488,7 +488,7 @@
 		"openMcpSettings": "打开 MCP 设置"
 	},
 	"readCommandOutput": {
-		"title": "Zoo read command output"
+		"title": "{{agentName}} 已读取命令输出"
 	},
 	"retiredProvider": {
 		"title": "供应商不再受支持",

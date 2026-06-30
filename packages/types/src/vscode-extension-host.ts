@@ -304,6 +304,7 @@ export type ExtensionState = Pick<
 	| "customSupportPrompts"
 	| "enhancementApiConfigId"
 	| "customCondensingPrompt"
+	| "agentName"
 	| "codebaseIndexConfig"
 	| "codebaseIndexModels"
 	| "profileThresholds"

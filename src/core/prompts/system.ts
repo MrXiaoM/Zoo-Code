@@ -56,6 +56,7 @@ async function generatePrompt(
 	todoList?: TodoItem[],
 	modelId?: string,
 	skillsManager?: SkillsManager,
+	agentName?: string,
 ): Promise<string> {
 	if (!context) {
 		throw new Error("Extension context is required for generating system prompt")
@@ -131,7 +132,10 @@ ${await addCustomInstructions(baseInstructions, globalCustomInstructions || "", 
 	settings,
 })}`
 
-	return basePrompt
+	// Replace {{agentName}} placeholder with the configured agent name, falling back to the built-in default "Mirai".
+	const resolvedPrompt = basePrompt.replace(/\{\{agentName\}\}/g, agentName || "Mirai")
+
+	return resolvedPrompt
 }
 
 export const SYSTEM_PROMPT = async (
@@ -151,6 +155,7 @@ export const SYSTEM_PROMPT = async (
 	todoList?: TodoItem[],
 	modelId?: string,
 	skillsManager?: SkillsManager,
+	agentName?: string,
 ): Promise<string> => {
 	if (!context) {
 		throw new Error("Extension context is required for generating system prompt")
@@ -179,5 +184,6 @@ export const SYSTEM_PROMPT = async (
 		todoList,
 		modelId,
 		skillsManager,
+		agentName,
 	)
 }

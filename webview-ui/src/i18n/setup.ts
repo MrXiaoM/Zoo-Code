@@ -28,6 +28,20 @@ Object.entries(localeFiles).forEach(([path, module]) => {
 
 console.log("Dynamically loaded translations:", Object.keys(translations))
 
+/** Cached agent name for use by the post-processor. Updated at runtime. */
+let _webviewAgentName = "Mirai"
+
+/**
+ * Register a post-processor that replaces `{{agentName}}` placeholders
+ * with the current agent name.  This runs AFTER i18next interpolation,
+ * so explicit { agentName: "…" } parameters in t() calls take precedence.
+ */
+i18next.use({
+	type: "postProcessor",
+	name: "agentName",
+	process: (value: string) => value.replaceAll("{{agentName}}", _webviewAgentName),
+})
+
 // Initialize i18next for React
 // This will be initialized with the VSCode language in TranslationProvider
 i18next.use(initReactI18next).init({
@@ -37,6 +51,7 @@ i18next.use(initReactI18next).init({
 	interpolation: {
 		escapeValue: false, // React already escapes by default
 	},
+	postProcess: ["agentName"],
 })
 
 export function loadTranslations() {
@@ -49,6 +64,14 @@ export function loadTranslations() {
 			console.warn(`Could not load ${lang} translations:`, error)
 		}
 	})
+}
+
+/**
+ * Update the agent name used by the i18n post-processor.
+ * Call this whenever the agent name setting changes.
+ */
+export function setWebviewAgentName(name: string) {
+	_webviewAgentName = name || "Mirai"
 }
 
 export default i18next

@@ -199,5 +199,9 @@
 		"descriptionNoRules": "您确定要删除此自定义模式吗？",
 		"confirm": "删除",
 		"cancel": "取消"
+	},
+	"agentName": {
+		"title": "角色名称",
+		"label": "自定义角色在对话中使用的名称。在角色定义中使用 {{agentName}} 占位符。"
 	}
 }

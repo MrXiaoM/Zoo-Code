@@ -63,6 +63,7 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setProfileThresholds: (value: Record<string, number>) => void
 	setApiConfiguration: (config: ProviderSettings) => void
 	setCustomInstructions: (value?: string) => void
+	setAgentName: (value: string) => void
 	setAlwaysAllowReadOnly: (value: boolean) => void
 	setAlwaysAllowReadOnlyOutsideWorkspace: (value: boolean) => void
 	setAlwaysAllowWrite: (value: boolean) => void
@@ -534,6 +535,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 			setState((prevState) => ({ ...prevState, experiments: { ...prevState.experiments, [id]: enabled } })),
 		setApiConfiguration,
 		setCustomInstructions: (value) => setState((prevState) => ({ ...prevState, customInstructions: value })),
+		setAgentName: (value) => setState((prevState) => ({ ...prevState, agentName: value })),
 		setAlwaysAllowReadOnly: (value) => setState((prevState) => ({ ...prevState, alwaysAllowReadOnly: value })),
 		setAlwaysAllowReadOnlyOutsideWorkspace: (value) =>
 			setState((prevState) => ({ ...prevState, alwaysAllowReadOnlyOutsideWorkspace: value })),

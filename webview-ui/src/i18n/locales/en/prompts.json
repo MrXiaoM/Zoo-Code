@@ -198,5 +198,9 @@
 		"descriptionNoRules": "Are you sure you want to delete this custom mode?",
 		"confirm": "Delete",
 		"cancel": "Cancel"
+	},
+	"agentName": {
+		"title": "Agent Name",
+		"label": "Customize the name the agent uses to refer to itself in conversations. Use {{agentName}} placeholder in role definitions."
 	}
 }

@@ -2615,6 +2615,7 @@ export class ClineProvider
 			terminalZdotdir: stateValues.terminalZdotdir ?? false,
 			terminalProfile: stateValues.terminalProfile,
 			mode: stateValues.mode ?? defaultModeSlug,
+			agentName: stateValues.agentName ?? "Mirai",
 			language: stateValues.language ?? formatLanguage(vscode.env.language),
 			mcpEnabled: stateValues.mcpEnabled ?? true,
 			mcpServers: this.mcpHub?.getAllServers() ?? [],

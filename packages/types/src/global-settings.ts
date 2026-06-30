@@ -219,6 +219,13 @@ export const globalSettingsSchema = z.object({
 	codebaseIndexModels: codebaseIndexModelsSchema.optional(),
 	codebaseIndexConfig: codebaseIndexConfigSchema.optional(),
 
+	/**
+	 * Custom agent name displayed in conversations. The name is injected into
+	 * role definitions at runtime by replacing `{{agentName}}` placeholders.
+	 * @default "Mirai"
+	 */
+	agentName: z.string().default("Mirai").optional(),
+
 	language: languagesSchema.optional(),
 
 	telemetrySetting: telemetrySettingsSchema.optional(),

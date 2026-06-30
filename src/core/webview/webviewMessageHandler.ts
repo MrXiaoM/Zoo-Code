@@ -49,7 +49,7 @@ import {
 	handleOpenRuleFile,
 	handleOpenRulesDirectory,
 } from "./rulesMessageHandler"
-import { changeLanguage, t } from "../../i18n"
+import { changeLanguage, setI18nAgentName, t } from "../../i18n"
 import { Package } from "../../shared/package"
 import { type RouterName, toRouterName } from "../../shared/api"
 import { MessageEnhancer } from "./messageEnhancer"
@@ -773,6 +773,9 @@ export const webviewMessageHandler = async (
 						if (!value) {
 							continue
 						}
+					} else if (key === "agentName") {
+						newValue = value ?? "Mirai"
+						setI18nAgentName(newValue as string)
 					}
 
 					await provider.contextProxy.setValue(key as keyof RooCodeSettings, newValue)

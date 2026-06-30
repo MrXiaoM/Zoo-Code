@@ -40,6 +40,8 @@ const PromptsSettings = ({
 		setEnhancementApiConfigId,
 		includeTaskHistoryInEnhance: contextIncludeTaskHistoryInEnhance,
 		setIncludeTaskHistoryInEnhance: contextSetIncludeTaskHistoryInEnhance,
+		agentName,
+		setAgentName,
 	} = useExtensionState()
 
 	// Use props if provided, otherwise fall back to context
@@ -106,6 +108,26 @@ const PromptsSettings = ({
 			</SectionHeader>
 
 			<Section>
+				<div className="mb-4">
+					<label className="block font-medium mb-1">{t("prompts:agentName.title")}</label>
+					<VSCodeTextArea
+						value={agentName || "Mirai"}
+						onInput={(e) => {
+							const value =
+								(e as unknown as CustomEvent)?.detail?.target?.value ??
+								((e as any).target as HTMLTextAreaElement).value
+							setAgentName(value)
+							vscode.postMessage({
+								type: "updateSettings",
+								updatedSettings: { agentName: value },
+							})
+						}}
+						rows={1}
+						className="w-full"
+					/>
+					<div className="text-sm text-vscode-descriptionForeground mt-1">{t("prompts:agentName.label")}</div>
+				</div>
+
 				<SearchableSetting
 					settingId="prompts-support-prompt-select"
 					section="prompts"

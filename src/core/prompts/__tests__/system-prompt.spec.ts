@@ -579,7 +579,8 @@ describe("SYSTEM_PROMPT", () => {
 		expect(prompt).not.toContain("Examples:")
 
 		// Should still contain role definition and other non-XML sections
-		expect(prompt).toContain(modes[0].roleDefinition)
+		// modes[0].roleDefinition uses {{agentName}} placeholder; runtime replaces it with "Mirai"
+		expect(prompt).toContain(modes[0].roleDefinition.replace("{{agentName}}", "Mirai"))
 		expect(prompt).toContain("能力")
 		expect(prompt).toContain("规则")
 		expect(prompt).toContain("系统信息")

@@ -68,6 +68,20 @@ if (!isTestEnv) {
 	}
 }
 
+/** Cached agent name for use by the post-processor. Updated at runtime. */
+let _i18nAgentName = "Mirai"
+
+/**
+ * Register a post-processor that replaces `{{agentName}}` placeholders
+ * with the current agent name.  This runs AFTER i18next interpolation,
+ * so explicit { agentName: "…" } parameters in t() calls take precedence.
+ */
+i18next.use({
+	type: "postProcessor",
+	name: "agentName",
+	process: (value: string) => value.replaceAll("{{agentName}}", _i18nAgentName),
+})
+
 // Initialize i18next with configuration
 i18next.init({
 	lng: "en",
@@ -77,6 +91,15 @@ i18next.init({
 	interpolation: {
 		escapeValue: false,
 	},
+	postProcess: ["agentName"],
 })
 
 export default i18next
+
+/**
+ * Update the agent name used by the i18n post-processor.
+ * Call this whenever the agent name setting changes.
+ */
+export function setI18nAgentName(name: string) {
+	_i18nAgentName = name || "Mirai"
+}

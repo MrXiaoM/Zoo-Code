@@ -1,4 +1,6 @@
-import i18next from "./setup"
+import i18next, { setI18nAgentName } from "./setup"
+
+export { setI18nAgentName }
 
 /**
  * Initialize i18next with the specified language
