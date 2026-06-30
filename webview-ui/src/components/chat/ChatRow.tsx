@@ -3,6 +3,7 @@ import { useSize } from "react-use"
 import { useTranslation, Trans } from "react-i18next"
 import deepEqual from "fast-deep-equal"
 import { VSCodeBadge } from "@vscode/webview-ui-toolkit/react"
+import { formatFullTimestamp } from "@src/utils/format"
 
 import type {
 	ClineMessage,
@@ -140,9 +141,14 @@ const ChatRow = memo(
 		// This allows us to detect changes without causing re-renders
 		const prevHeightRef = useRef(0)
 
+		const timestampTitle = useMemo(() => formatFullTimestamp(message.ts), [message.ts])
+
 		const [chatrow, { height }] = useSize(
-			<div className="px-[15px] py-[10px] pr-[6px]">
+			<div className="px-[15px] py-[10px] pr-[6px] group relative">
 				<ChatRowContent {...props} />
+				<div className="absolute top-1 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-vscode-descriptionForeground pointer-events-none select-none">
+					{timestampTitle}
+				</div>
 			</div>,
 		)
 

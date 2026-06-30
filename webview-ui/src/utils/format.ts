@@ -26,6 +26,28 @@ export const formatDate = (timestamp: number) => {
 	})
 }
 
+/**
+ * Formats a Unix millisecond timestamp into a full date/time string
+ * suitable for use in tooltip / title attributes.
+ *
+ * Example output (zh-CN): "2024年1月15日 14:30:00"
+ * Example output (en):    "January 15, 2024, 2:30:00 PM"
+ */
+export const formatFullTimestamp = (timestamp: number): string => {
+	const date = new Date(timestamp)
+	const locale = i18next.language || "en"
+
+	return date.toLocaleString(locale, {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: true,
+	})
+}
+
 export const formatTimeAgo = (timestamp: number) => {
 	const now = Date.now()
 	const diff = now - timestamp

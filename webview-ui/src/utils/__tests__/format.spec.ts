@@ -1,4 +1,4 @@
-import { formatLargeNumber, formatDate, formatTimeAgo } from "../format"
+import { formatLargeNumber, formatDate, formatTimeAgo, formatFullTimestamp } from "../format"
 
 // Mock i18next
 vi.mock("i18next", () => ({
@@ -64,6 +64,38 @@ describe("formatDate", () => {
 		// The exact format depends on the locale, but it should contain the date components
 		expect(result).toMatch(/january|jan/i)
 		expect(result).toMatch(/15/)
+	})
+})
+
+describe("formatFullTimestamp", () => {
+	it("should format full timestamp with year, month, day, hour, minute, and second", () => {
+		const timestamp = new Date("2024-01-15T14:30:45").getTime()
+		const result = formatFullTimestamp(timestamp)
+		// Should contain year
+		expect(result).toMatch(/2024/)
+		// Should contain month (January / Jan)
+		expect(result).toMatch(/january|jan/i)
+		// Should contain day
+		expect(result).toMatch(/15/)
+		// Should contain hour (2 PM in 12h format)
+		expect(result).toMatch(/2/)
+		// Should contain minutes
+		expect(result).toMatch(/30/)
+		// Should contain seconds
+		expect(result).toMatch(/45/)
+	})
+
+	it("should return a non-empty string for valid timestamps", () => {
+		const timestamp = Date.now()
+		const result = formatFullTimestamp(timestamp)
+		expect(typeof result).toBe("string")
+		expect(result.length).toBeGreaterThan(0)
+	})
+
+	it("should return different strings for different timestamps", () => {
+		const ts1 = new Date("2024-01-15T14:30:45").getTime()
+		const ts2 = new Date("2024-06-30T08:15:00").getTime()
+		expect(formatFullTimestamp(ts1)).not.toEqual(formatFullTimestamp(ts2))
 	})
 })
 
