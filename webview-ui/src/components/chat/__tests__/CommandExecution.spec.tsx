@@ -156,6 +156,61 @@ describe("CommandExecution", () => {
 		})
 	})
 
+	it("should focus a new VS Code terminal when terminalId is available from started event", () => {
+		// Approval payload: new terminal (willReuseTerminal: false), terminalId not yet assigned
+		const approvalPayload = JSON.stringify({
+			command: "npm test",
+			terminalInfo: {
+				provider: "vscode",
+				cwd: "/workspace/src",
+				willReuseTerminal: false,
+			},
+		})
+
+		render(
+			<ExtensionStateWrapper>
+				<CommandExecution executionId="test-focus-new" text={approvalPayload} />
+			</ExtensionStateWrapper>,
+		)
+
+		// In approval phase, terminalId is undefined — no focus button
+		expect(screen.queryByText("chat:commandExecution.focusTerminal")).not.toBeInTheDocument()
+
+		// Simulate the "started" event that assigns terminalId=8 for the new terminal
+		const messageCallback = (useEvent as ReturnType<typeof vi.fn>).mock.calls.at(-1)?.[1]
+
+		act(() => {
+			messageCallback?.({
+				data: {
+					type: "commandExecutionStatus",
+					text: JSON.stringify({
+						executionId: "test-focus-new",
+						status: "started",
+						pid: 12345,
+						command: "npm test",
+						terminalInfo: {
+							terminalId: 8,
+							provider: "vscode",
+							cwd: "/workspace/src",
+							willReuseTerminal: false,
+						},
+					}),
+				},
+			})
+		})
+
+		// Now the focus button should appear
+		expect(screen.getByText("chat:commandExecution.focusTerminal")).toBeInTheDocument()
+
+		fireEvent.click(screen.getByText("chat:commandExecution.focusTerminal"))
+
+		expect(vscode.postMessage).toHaveBeenCalledWith({
+			type: "terminalOperation",
+			terminalOperation: "focus",
+			terminalId: 8,
+		})
+	})
+
 	it("should render with custom icon and title", () => {
 		const icon = <span data-testid="custom-icon">📦</span>
 		const title = <span data-testid="custom-title">Installing Dependencies</span>

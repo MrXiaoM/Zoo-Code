@@ -279,8 +279,7 @@ const providerLabels: Record<CommandTerminalInfo["provider"], string> = {
 }
 
 const TerminalInfo = ({ terminalInfo }: { terminalInfo: CommandTerminalInfo }) => {
-	const canFocusTerminal =
-		terminalInfo.provider === "vscode" && terminalInfo.willReuseTerminal && terminalInfo.terminalId !== undefined
+	const canFocusTerminal = terminalInfo.provider === "vscode" && terminalInfo.terminalId !== undefined
 
 	return (
 		<div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-vscode-descriptionForeground">
