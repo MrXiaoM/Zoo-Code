@@ -3,6 +3,7 @@ import { VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react"
 import { type ToolProgressStatus } from "@roo-code/types"
 import { getLanguageFromPath } from "@src/utils/getLanguageFromPath"
 import { formatPathTooltip } from "@src/utils/formatPathTooltip"
+import { ChevronUp } from "lucide-react"
 
 import { ToolUseBlock, ToolUseBlockHeader } from "./ToolUseBlock"
 import CodeBlock from "./CodeBlock"
@@ -120,6 +121,23 @@ const CodeAccordion = ({
 					) : (
 						<CodeBlock source={source} language={inferredLanguage} />
 					)}
+				</div>
+			)}
+			{isExpanded && hasHeader && (
+				<div className="flex justify-center pt-2">
+					<button
+						onClick={onToggleExpand}
+						className="flex items-center gap-1 text-xs cursor-pointer hover:underline"
+						style={{
+							color: "var(--vscode-descriptionForeground)",
+							background: "color-mix(in srgb, var(--vscode-editor-background) 80%, transparent)",
+							border: "none",
+							borderRadius: "4px",
+							padding: "4px 12px",
+						}}>
+						<ChevronUp className="w-3.5 h-3.5" />
+						收起
+					</button>
 				</div>
 			)}
 		</ToolUseBlock>

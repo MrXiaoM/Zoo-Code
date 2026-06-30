@@ -9,8 +9,9 @@ import { ChevronDown, ChevronUp, Copy, Check } from "lucide-react"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { StandardTooltip } from "@/components/ui"
 
-export const CODE_BLOCK_BG_COLOR = "var(--vscode-editor-background, --vscode-sideBar-background, rgb(30 30 30))"
-export const WRAPPER_ALPHA = "cc" // 80% opacity
+export const CODE_BLOCK_BG_COLOR =
+	"color-mix(in srgb, var(--vscode-editor-background, --vscode-sideBar-background, rgb(30 30 30)) 92%, transparent)"
+export const WRAPPER_ALPHA = "cc" // 80% opacity - deprecated, kept for backward compatibility
 
 // Configuration constants
 export const WINDOW_SHADE_SETTINGS = {
@@ -73,7 +74,7 @@ const CodeBlockButtonWrapper = styled.div`
 	right: var(--copy-button-right, 8px);
 	height: auto;
 	z-index: 40;
-	background: ${CODE_BLOCK_BG_COLOR}${WRAPPER_ALPHA};
+	background: color-mix(in srgb, var(--vscode-editor-background) 80%, transparent);
 	overflow: visible;
 	pointer-events: none;
 	opacity: var(--copy-button-opacity, 0);

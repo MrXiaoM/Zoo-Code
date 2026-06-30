@@ -70,6 +70,21 @@ export const ReasoningBlock = ({ content, isStreaming, isLast }: ReasoningBlockP
 					ref={contentRef}
 					className="border-l border-vscode-descriptionForeground/20 ml-2 pl-4 pb-1 text-vscode-descriptionForeground break-words">
 					<MarkdownBlock markdown={content} />
+					<div className="flex justify-center pt-2">
+						<button
+							onClick={handleToggle}
+							className="flex items-center gap-1 text-xs cursor-pointer hover:underline"
+							style={{
+								color: "var(--vscode-descriptionForeground)",
+								background: "color-mix(in srgb, var(--vscode-editor-background) 80%, transparent)",
+								border: "none",
+								borderRadius: "4px",
+								padding: "4px 12px",
+							}}>
+							<ChevronUp className="w-3.5 h-3.5" />
+							收起
+						</button>
+					</div>
 				</div>
 			)}
 		</div>

@@ -73,6 +73,7 @@ import {
 	Split,
 	ArrowRight,
 	Check,
+	ChevronUp,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PathTooltip } from "../ui/PathTooltip"
@@ -714,7 +715,8 @@ export const ChatRowContent = ({
 							<div
 								style={{
 									marginTop: "4px",
-									backgroundColor: "var(--vscode-editor-background)",
+									backgroundColor:
+										"color-mix(in srgb, var(--vscode-editor-background) 75%, transparent)",
 									border: "1px solid var(--vscode-editorGroup-border)",
 									borderRadius: "4px",
 									overflow: "hidden",
@@ -762,6 +764,27 @@ export const ChatRowContent = ({
 												<span style={{ color: "var(--vscode-descriptionForeground)" }}>
 													{skillInfo.args}
 												</span>
+											</div>
+										)}
+										{isExpanded && (
+											<div className="flex justify-center pt-2">
+												<button
+													onClick={(e) => {
+														e.stopPropagation()
+														handleToggleExpand()
+													}}
+													className="flex items-center gap-1 text-xs cursor-pointer hover:underline"
+													style={{
+														color: "var(--vscode-descriptionForeground)",
+														background:
+															"color-mix(in srgb, var(--vscode-editor-background) 80%, transparent)",
+														border: "none",
+														borderRadius: "4px",
+														padding: "4px 12px",
+													}}>
+													<ChevronUp className="w-3.5 h-3.5" />
+													收起
+												</button>
 											</div>
 										)}
 									</div>
@@ -997,7 +1020,8 @@ export const ChatRowContent = ({
 							<div
 								style={{
 									marginTop: "4px",
-									backgroundColor: "var(--vscode-editor-background)",
+									backgroundColor:
+										"color-mix(in srgb, var(--vscode-editor-background) 75%, transparent)",
 									border: "1px solid var(--vscode-editorGroup-border)",
 									borderRadius: "4px",
 									overflow: "hidden",
@@ -1045,6 +1069,27 @@ export const ChatRowContent = ({
 										{slashCommandInfo.description && (
 											<div style={{ color: "var(--vscode-descriptionForeground)" }}>
 												{slashCommandInfo.description}
+											</div>
+										)}
+										{isExpanded && (
+											<div className="flex justify-center pt-2">
+												<button
+													onClick={(e) => {
+														e.stopPropagation()
+														handleToggleExpand()
+													}}
+													className="flex items-center gap-1 text-xs cursor-pointer hover:underline"
+													style={{
+														color: "var(--vscode-descriptionForeground)",
+														background:
+															"color-mix(in srgb, var(--vscode-editor-background) 80%, transparent)",
+														border: "none",
+														borderRadius: "4px",
+														padding: "4px 12px",
+													}}>
+													<ChevronUp className="w-3.5 h-3.5" />
+													收起
+												</button>
 											</div>
 										)}
 									</div>
