@@ -14,8 +14,8 @@ describe("addCustomInstructions", () => {
 			{ language: "fr" },
 		)
 
-		expect(result).toContain("语言偏好：")
-		expect(result).toContain('你应该始终以"Français"（fr）语言来思考和表达')
+		expect(result).toContain("语言要求（重申）：")
+		expect(result).toContain('你必须严格以"Français"（fr）语言来思考和表达，禁止使用任何其他语言')
 	})
 
 	it("works without vscode language", async () => {
@@ -26,8 +26,8 @@ describe("addCustomInstructions", () => {
 			"test-mode",
 		)
 
-		expect(result).not.toContain("语言偏好：")
-		expect(result).not.toContain("你应该始终以")
+		expect(result).not.toContain("语言要求（重申）：")
+		expect(result).not.toContain("你必须严格以")
 	})
 })
 

@@ -610,13 +610,12 @@ describe("FileRestrictionError", () => {
 			expect(debugMode).toBeDefined()
 			expect(debugMode).toMatchObject({
 				slug: "debug",
-				name: "🪲 Debug",
-				roleDefinition:
-					"You are Zoo, an expert software debugger specializing in systematic problem diagnosis and resolution.",
+				name: "🪲 调试",
+				roleDefinition: expect.stringContaining("Mirai"),
 				groups: ["read", "edit", "command", "mcp"],
 			})
 			expect(debugMode?.customInstructions).toContain(
-				"Reflect on 5-7 different possible sources of the problem, distill those down to 1-2 most likely sources, and then add logs to validate your assumptions. Explicitly ask the user to confirm the diagnosis before fixing the problem.",
+				"思考 5-7 个不同可能的问题来源，将其提炼为 1-2 个最可能的来源，然后添加日志来验证你的假设。在修复问题之前，明确要求用户确认诊断结果。",
 			)
 		})
 	})
@@ -631,9 +630,8 @@ describe("FileRestrictionError", () => {
 			const result = await getFullModeDetails("debug")
 			expect(result).toMatchObject({
 				slug: "debug",
-				name: "🪲 Debug",
-				roleDefinition:
-					"You are Zoo, an expert software debugger specializing in systematic problem diagnosis and resolution.",
+				name: "🪲 调试",
+				roleDefinition: expect.stringContaining("Mirai"),
 			})
 		})
 

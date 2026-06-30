@@ -453,7 +453,7 @@ export async function addCustomInstructions(
 	if (options.language) {
 		const languageName = isLanguage(options.language) ? LANGUAGES[options.language] : options.language
 		sections.push(
-			`语言偏好：\n除非用户另有指示，你应该始终以"${languageName}"（${options.language}）语言来思考和表达。`,
+			`语言要求（重申）：\n你必须严格以"${languageName}"（${options.language}）语言来思考和表达，禁止使用任何其他语言。除非用户明确要求切换语言。`,
 		)
 	}
 

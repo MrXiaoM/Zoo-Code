@@ -23,6 +23,7 @@ import {
 	addCustomInstructions,
 	markdownFormattingSection,
 	getSkillsSection,
+	getLanguagePreferenceSection,
 } from "./sections"
 
 // Helper function to get prompt component, filtering out empty objects
@@ -92,7 +93,13 @@ async function generatePrompt(
 	// Tools catalog is not included in the system prompt.
 	const toolsCatalog = ""
 
+	// Determine effective language, using formatLanguage to convert raw locale strings
+	// to a validated Language type with "en" as fallback.
+	const effectiveLanguage = formatLanguage(language ?? vscode.env.language)
+
 	const basePrompt = `${roleDefinition}
+
+${getLanguagePreferenceSection(effectiveLanguage)}
 
 ${markdownFormattingSection()}
 

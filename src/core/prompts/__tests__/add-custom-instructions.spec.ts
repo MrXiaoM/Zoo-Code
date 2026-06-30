@@ -55,6 +55,15 @@ vi.mock("../sections/modes", () => ({
 	getModesSection: vi.fn().mockImplementation(async () => `====\n\nMODES\n\n- Test modes section`),
 }))
 
+// Mock the language-preference section
+vi.mock("../sections/language-preference", () => ({
+	getLanguagePreferenceSection: vi
+		.fn()
+		.mockImplementation(
+			(language: string) => `====\n\n语言规则\n\n你必须始终以"Mock Language"（${language}）语言进行所有交流`,
+		),
+}))
+
 // Mock the custom instructions
 vi.mock("../sections/custom-instructions", () => {
 	const addCustomInstructions = vi.fn()
@@ -82,7 +91,7 @@ __setMockImplementation(
 		// Add language preference if provided
 		if (options?.language) {
 			sections.push(
-				`Language Preference:\nYou should always speak and think in the "${options.language}" language.`,
+				`语言要求（重申）：\n你必须严格以"Mock Language"（${options.language}）语言来思考和表达，禁止使用任何其他语言。除非用户明确要求切换语言。`,
 			)
 		}
 

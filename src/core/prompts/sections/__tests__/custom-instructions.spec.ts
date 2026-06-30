@@ -529,7 +529,7 @@ describe("addCustomInstructions", () => {
 			{ language: "es" },
 		)
 
-		expect(result).toContain("语言偏好：")
+		expect(result).toContain("语言要求（重申）：")
 		expect(result).toContain("Español") // Check for language name
 		expect(result).toContain("（es）") // Check for language code in parentheses
 		expect(result).toContain("全局指令：\nglobal instructions")
@@ -975,7 +975,7 @@ describe("addCustomInstructions", () => {
 			{ language: "xyz" }, // Unknown language code
 		)
 
-		expect(result).toContain("语言偏好：")
+		expect(result).toContain("语言要求（重申）：")
 		expect(result).toContain('"xyz"（xyz）语言') // For unknown codes, the code is used as the name too
 		expect(result).toContain("全局指令：\nglobal instructions")
 	})
