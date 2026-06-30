@@ -57,8 +57,8 @@ export class AskFollowupQuestionTool extends BaseTool<"ask_followup_question"> {
 			// model can correct it instead of looping with the same payload.
 			if (!Array.isArray(follow_up)) {
 				await recordValidationError(
-					"The 'follow_up' parameter must be an array of suggestion objects, each shaped like { text: string, mode?: string }. " +
-						"Retry with 'follow_up' as a JSON array.",
+					"参数 'follow_up' 必须是一个建议条目数组，每一个条目的格式如：{ text: string, mode?: string }。 " +
+						"请带上使用 JSON 数组格式的 'follow_up' 参数重试。",
 				)
 				return
 			}

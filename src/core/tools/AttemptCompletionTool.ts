@@ -61,9 +61,7 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 			task.recordToolError("attempt_completion")
 
 			pushToolResult(
-				formatResponse.toolError(
-					"Cannot complete task while there are incomplete todos. Please finish all todos before attempting completion.",
-				),
+				formatResponse.toolError("还存在未完成 todo 时无法完成任务。请在尝试完成任务之前结束所有的 todo。"),
 			)
 
 			return

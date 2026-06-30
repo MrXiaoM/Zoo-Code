@@ -183,7 +183,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 				// Fail fast when server is unknown
 				const availableServersArray = servers.map((s) => s.name)
 				const availableServers =
-					availableServersArray.length > 0 ? availableServersArray.join(", ") : "No servers available"
+					availableServersArray.length > 0 ? availableServersArray.join(", ") : "没有可用的 MCP 服务器"
 
 				task.consecutiveMistakeCount++
 				task.recordToolError("use_mcp_tool")
@@ -204,7 +204,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 					t("mcp:errors.toolNotFound", {
 						toolName,
 						serverName,
-						availableTools: "No tools available",
+						availableTools: "没有可用的工具",
 					}),
 				)
 				task.didToolFailInCurrentTurn = true
@@ -250,7 +250,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 						toolName,
 						serverName,
 						availableTools:
-							enabledToolNames.length > 0 ? enabledToolNames.join(", ") : "No enabled tools available",
+							enabledToolNames.length > 0 ? enabledToolNames.join(", ") : "没有可用的已启用工具",
 					}),
 				)
 				task.didToolFailInCurrentTurn = true
@@ -336,7 +336,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 
 		const toolResult = await task.providerRef.deref()?.getMcpHub()?.callTool(serverName, toolName, parsedArguments)
 
-		let toolResultPretty = "(No response)"
+		let toolResultPretty = "(没有响应)"
 		let images: string[] = []
 
 		if (toolResult) {
@@ -347,12 +347,12 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 				await this.sendExecutionStatus(task, {
 					executionId,
 					status: "output",
-					response: outputText || (images.length > 0 ? `[${images.length} image(s)]` : ""),
+					response: outputText || (images.length > 0 ? `[${images.length} 张图片]` : ""),
 				})
 
 				toolResultPretty =
 					(toolResult.isError ? "Error:\n" : "") +
-					(outputText || (images.length > 0 ? `[${images.length} image(s) received]` : ""))
+					(outputText || (images.length > 0 ? `[${images.length} 张图片已接收]` : ""))
 			}
 
 			// Send completion status
@@ -360,14 +360,14 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 				executionId,
 				status: toolResult.isError ? "error" : "completed",
 				response: toolResultPretty,
-				error: toolResult.isError ? "Error executing MCP tool" : undefined,
+				error: toolResult.isError ? "执行 MCP 工具时出现错误" : undefined,
 			})
 		} else {
 			// Send error status if no result
 			await this.sendExecutionStatus(task, {
 				executionId,
 				status: "error",
-				error: "No response from MCP server",
+				error: "MCP 服务器没有提供响应",
 			})
 		}
 

@@ -74,14 +74,14 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 				task.recordToolError("apply_patch")
 				const errorMessage =
 					error instanceof ParseError
-						? `Invalid patch format: ${error.message}`
-						: `Failed to parse patch: ${error instanceof Error ? error.message : String(error)}`
+						? `无效的 patch 格式：${error.message}`
+						: `解析 patch 失败：${error instanceof Error ? error.message : String(error)}`
 				pushToolResult(formatResponse.toolError(errorMessage))
 				return
 			}
 
 			if (parsedPatch.hunks.length === 0) {
-				pushToolResult("No file operations found in patch.")
+				pushToolResult("在 patch 中找不到文件操作。")
 				return
 			}
 
@@ -97,7 +97,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			} catch (error) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("apply_patch")
-				const errorMessage = `Failed to process patch: ${error instanceof Error ? error.message : String(error)}`
+				const errorMessage = `处理 patch 失败：${error instanceof Error ? error.message : String(error)}`
 				pushToolResult(formatResponse.toolError(errorMessage))
 				return
 			}
@@ -153,7 +153,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 		if (fileExists) {
 			task.consecutiveMistakeCount++
 			task.recordToolError("apply_patch")
-			const errorMessage = `File already exists: ${relPath}. Use Update File instead.`
+			const errorMessage = `文件已经存在：${relPath}。请使用“更新文件” (Update File) 代替。`
 			await task.say("error", errorMessage)
 			pushToolResult(formatResponse.toolError(errorMessage))
 			return
@@ -208,7 +208,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			if (!isPreventFocusDisruptionEnabled) {
 				await task.diffViewProvider.revertChanges()
 			}
-			pushToolResult("Changes were rejected by the user.")
+			pushToolResult("此变更已被用户拒绝。")
 			await task.diffViewProvider.reset()
 			return
 		}
@@ -244,7 +244,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 		if (!fileExists) {
 			task.consecutiveMistakeCount++
 			task.recordToolError("apply_patch")
-			const errorMessage = `File not found: ${relPath}. Cannot delete a non-existent file.`
+			const errorMessage = `文件不存在：${relPath}。无法删除一个不存在的文件。`
 			await task.say("error", errorMessage)
 			pushToolResult(formatResponse.toolError(errorMessage))
 			return
@@ -255,20 +255,20 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 		const sharedMessageProps: ClineSayTool = {
 			tool: "appliedDiff",
 			path: getReadablePath(task.cwd, relPath),
-			diff: `File will be deleted: ${relPath}`,
+			diff: `文件将会被删除：${relPath}`,
 			isOutsideWorkspace,
 		}
 
 		const completeMessage = JSON.stringify({
 			...sharedMessageProps,
-			content: `Delete file: ${relPath}`,
+			content: `删除文件：${relPath}`,
 			isProtected: isWriteProtected,
 		} satisfies ClineSayTool)
 
 		const didApprove = await askApproval("tool", completeMessage, undefined, isWriteProtected)
 
 		if (!didApprove) {
-			pushToolResult("Delete operation was rejected by the user.")
+			pushToolResult("删除操作已被用户拒绝。")
 			return
 		}
 
@@ -276,14 +276,14 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 		try {
 			await fs.unlink(absolutePath)
 		} catch (error) {
-			const errorMessage = `Failed to delete file '${relPath}': ${error instanceof Error ? error.message : String(error)}`
+			const errorMessage = `无法删除文件 '${relPath}': ${error instanceof Error ? error.message : String(error)}`
 			await task.say("error", errorMessage)
 			pushToolResult(formatResponse.toolError(errorMessage))
 			return
 		}
 
 		task.didEditFile = true
-		pushToolResult(`Successfully deleted ${relPath}`)
+		pushToolResult(`已成功删除 ${relPath}`)
 		task.processQueuedMessages()
 	}
 
@@ -302,7 +302,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 		if (!fileExists) {
 			task.consecutiveMistakeCount++
 			task.recordToolError("apply_patch")
-			const errorMessage = `File not found: ${relPath}. Cannot update a non-existent file.`
+			const errorMessage = `文件不存在：${relPath}。无法更新一个不存在的文件。`
 			await task.say("error", errorMessage)
 			pushToolResult(formatResponse.toolError(errorMessage))
 			return
@@ -319,7 +319,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 		// Generate and validate diff
 		const diff = formatResponse.createPrettyPatch(relPath, originalContent, newContent)
 		if (!diff) {
-			pushToolResult(`No changes needed for '${relPath}'`)
+			pushToolResult(`对于文件 '${relPath}' 来说，此次编辑没有产生变更`)
 			await task.diffViewProvider.reset()
 			return
 		}
@@ -365,7 +365,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			if (!isPreventFocusDisruptionEnabled) {
 				await task.diffViewProvider.revertChanges()
 			}
-			pushToolResult("Changes were rejected by the user.")
+			pushToolResult("此变更已被用户拒绝。")
 			await task.diffViewProvider.reset()
 			return
 		}
@@ -388,7 +388,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			if (isMovePathWriteProtected) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("apply_patch")
-				const errorMessage = `Cannot move file to write-protected path: ${change.movePath}`
+				const errorMessage = `无法移动文件到带有写保护的路径：${change.movePath}`
 				await task.say("error", errorMessage)
 				pushToolResult(formatResponse.toolError(errorMessage))
 				await task.diffViewProvider.reset()
@@ -400,7 +400,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			if (isMoveOutsideWorkspace) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("apply_patch")
-				const errorMessage = `Cannot move file to path outside workspace: ${change.movePath}`
+				const errorMessage = `无法移动文件到工作区外的路径：${change.movePath}`
 				await task.say("error", errorMessage)
 				pushToolResult(formatResponse.toolError(errorMessage))
 				await task.diffViewProvider.reset()
@@ -427,7 +427,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 			try {
 				await fs.unlink(absolutePath)
 			} catch (error) {
-				console.error(`Failed to delete original file after move: ${error}`)
+				console.error(`在移动文件后删除原文件失败：${error}`)
 			}
 
 			await task.fileContextTracker.trackFileContext(change.movePath, "roo_edited" as RecordSource)
@@ -468,7 +468,7 @@ export class ApplyPatchTool extends BaseTool<"apply_patch"> {
 		const sharedMessageProps: ClineSayTool = {
 			tool: "appliedDiff",
 			path: displayPath || path.basename(task.cwd) || "workspace",
-			diff: patchPreview || "Parsing patch...",
+			diff: patchPreview || "正在解析 patch...",
 			isOutsideWorkspace: isPathOutsideWorkspace(absolutePath),
 		}
 

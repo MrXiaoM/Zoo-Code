@@ -39,7 +39,7 @@ export class SkillTool extends BaseTool<"skill"> {
 			if (!skillsManager) {
 				task.recordToolError("skill")
 				task.didToolFailInCurrentTurn = true
-				pushToolResult(formatResponse.toolError("Skills Manager not available"))
+				pushToolResult(formatResponse.toolError("Skills 管理器不可用"))
 				return
 			}
 
@@ -59,7 +59,7 @@ export class SkillTool extends BaseTool<"skill"> {
 				task.didToolFailInCurrentTurn = true
 				pushToolResult(
 					formatResponse.toolError(
-						`Skill '${skillName}' not found. Available skills: ${skillNames.join(", ") || "(none)"}`,
+						`Skill '${skillName}' 不存在。可用的 skills 列表: ${skillNames.join(", ") || "(无)"}`,
 					),
 				)
 				return

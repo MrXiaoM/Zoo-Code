@@ -92,11 +92,11 @@ function checkPatchBoundaries(lines: string[]): void {
 	const lastLine = lines[lines.length - 1]?.trim()
 
 	if (firstLine !== BEGIN_PATCH_MARKER) {
-		throw new ParseError("The first line of the patch must be '*** Begin Patch'")
+		throw new ParseError("patch 的第一行必须是 '*** Begin Patch'")
 	}
 
 	if (lastLine !== END_PATCH_MARKER) {
-		throw new ParseError("The last line of the patch must be '*** End Patch'")
+		throw new ParseError("patch 的最后一行必须是 '*** End Patch'")
 	}
 }
 
@@ -110,7 +110,7 @@ function parseUpdateFileChunk(
 	allowMissingContext: boolean,
 ): { chunk: UpdateFileChunk; linesConsumed: number } {
 	if (lines.length === 0) {
-		throw new ParseError("Update hunk does not contain any lines", lineNumber)
+		throw new ParseError("Update hunk 不包含任何行", lineNumber)
 	}
 
 	let changeContext: string | null = null
@@ -124,11 +124,11 @@ function parseUpdateFileChunk(
 		changeContext = lines[0].substring(CHANGE_CONTEXT_MARKER.length)
 		startIndex = 1
 	} else if (!allowMissingContext) {
-		throw new ParseError(`Expected update hunk to start with a @@ context marker, got: '${lines[0]}'`, lineNumber)
+		throw new ParseError(`预期 update hunk 应该以 @@ 上下文标记开头，但实际取得：'${lines[0]}'`, lineNumber)
 	}
 
 	if (startIndex >= lines.length) {
-		throw new ParseError("Update hunk does not contain any lines", lineNumber + 1)
+		throw new ParseError("Update hunk 不包含任何行", lineNumber + 1)
 	}
 
 	const chunk: UpdateFileChunk = {
@@ -144,7 +144,7 @@ function parseUpdateFileChunk(
 
 		if (line === EOF_MARKER) {
 			if (parsedLines === 0) {
-				throw new ParseError("Update hunk does not contain any lines", lineNumber + 1)
+				throw new ParseError("Update hunk 不包含任何行", lineNumber + 1)
 			}
 			chunk.isEndOfFile = true
 			parsedLines++
@@ -182,7 +182,7 @@ function parseUpdateFileChunk(
 				// If we haven't parsed any lines yet, it's an error
 				if (parsedLines === 0) {
 					throw new ParseError(
-						`Unexpected line found in update hunk: '${line}'. Every line should start with ' ' (context line), '+' (added line), or '-' (removed line)`,
+						`在 update hunk 中找到未预期的行：'${line}'。每一行都应该以 ' ' (上下文行), '+' (添加行), 或 '-' (删除行) 开头`,
 						lineNumber + 1,
 					)
 				}
@@ -272,7 +272,7 @@ function parseOneHunk(lines: string[], lineNumber: number): { hunk: Hunk; linesC
 		}
 
 		if (chunks.length === 0) {
-			throw new ParseError(`Update file hunk for path '${path}' is empty`, lineNumber)
+			throw new ParseError(`路径 '${path}' 的 Update file hunk 为空`, lineNumber)
 		}
 
 		return {
@@ -282,7 +282,7 @@ function parseOneHunk(lines: string[], lineNumber: number): { hunk: Hunk; linesC
 	}
 
 	throw new ParseError(
-		`'${firstLine}' is not a valid hunk header. Valid hunk headers: '*** Add File: {path}', '*** Delete File: {path}', '*** Update File: {path}'`,
+		`'${firstLine}' 不是一个有效的 hunk header. 有效的 hunk headers 有：'*** Add File: {path}', '*** Delete File: {path}', '*** Update File: {path}'`,
 		lineNumber,
 	)
 }

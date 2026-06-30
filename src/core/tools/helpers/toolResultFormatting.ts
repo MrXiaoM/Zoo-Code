@@ -6,5 +6,5 @@ export function formatToolInvocation(toolName: string, params: Record<string, an
 	const paramsList = Object.entries(params)
 		.map(([key, value]) => `${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`)
 		.join(", ")
-	return `Called ${toolName}${paramsList ? ` with ${paramsList}` : ""}`
+	return `已调用工具 ${toolName}${paramsList ? `，带有参数 ${paramsList}` : ""}`
 }

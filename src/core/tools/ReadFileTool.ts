@@ -93,7 +93,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 			task.consecutiveMistakeCount++
 			task.recordToolError("read_file")
 			const errorMsg = await task.sayAndCreateMissingParamError("read_file", "path")
-			pushToolResult(`Error: ${errorMsg}`)
+			pushToolResult(`错误：${errorMsg}`)
 			return
 		}
 
@@ -102,13 +102,13 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 		// Initialize file results tracking
 		// Validate line number parameters (must be 1-indexed positive integers)
 		if (params.offset !== undefined && params.offset < 1) {
-			const errorMsg = `offset must be a 1-indexed line number (got ${params.offset}). Line numbers start at 1.`
-			pushToolResult(`Error: ${errorMsg}`)
+			const errorMsg = `offset 必须是一个 1-indexed 的行号 (当前已取得 ${params.offset})。行号从 1 开始。`
+			pushToolResult(`错误：${errorMsg}`)
 			return
 		}
 		if (params.indentation?.anchor_line !== undefined && params.indentation.anchor_line < 1) {
-			const errorMsg = `anchor_line must be a 1-indexed line number (got ${params.indentation.anchor_line}). Line numbers start at 1.`
-			pushToolResult(`Error: ${errorMsg}`)
+			const errorMsg = `anchor_line 必须是一个 1-indexed 的行号 (当前已取得 ${params.indentation.anchor_line})。行号从 1 开始。`
+			pushToolResult(`错误：${errorMsg}`)
 			return
 		}
 
@@ -154,7 +154,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 					updateFileResult(relPath, {
 						status: "blocked",
 						error: errorMsg,
-						nativeContent: `File: ${relPath}\nError: ${errorMsg}`,
+						nativeContent: `文件：${relPath}\n错误：${errorMsg}`,
 					})
 					continue
 				}
@@ -184,13 +184,13 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 					// Check if path is a directory
 					const stats = await fs.stat(fullPath)
 					if (stats.isDirectory()) {
-						const errorMsg = `Cannot read '${relPath}' because it is a directory. Use list_files tool instead.`
+						const errorMsg = `无法读取文件 '${relPath}'，因为它是一个目录。请使用 list_files 工具代替。`
 						updateFileResult(relPath, {
 							status: "error",
 							error: errorMsg,
-							nativeContent: `File: ${relPath}\nError: ${errorMsg}`,
+							nativeContent: `文件：${relPath}\n错误：${errorMsg}`,
 						})
-						await task.say("error", `Error reading file ${relPath}: ${errorMsg}`)
+						await task.say("error", `读取文件 ${relPath} 失败：${errorMsg}`)
 						continue
 					}
 
@@ -221,16 +221,16 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 					await task.fileContextTracker.trackFileContext(relPath, "read_tool" as RecordSource)
 
 					updateFileResult(relPath, {
-						nativeContent: `File: ${relPath}\n${result}`,
+						nativeContent: `文件：${relPath}\n${result}`,
 					})
 				} catch (error) {
 					const errorMsg = error instanceof Error ? error.message : String(error)
 					updateFileResult(relPath, {
 						status: "error",
-						error: `Error reading file: ${errorMsg}`,
-						nativeContent: `File: ${relPath}\nError: ${errorMsg}`,
+						error: `读取文件错误：${errorMsg}`,
+						nativeContent: `文件：${relPath}\n错误：${errorMsg}`,
 					})
-					await task.say("error", `Error reading file ${relPath}: ${errorMsg}`)
+					await task.say("error", `读取文件 ${relPath} 时发生错误：${errorMsg}`)
 				}
 			}
 
@@ -247,11 +247,11 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 
 			updateFileResult(relPath, {
 				status: "error",
-				error: `Error reading file: ${errorMsg}`,
-				nativeContent: `File: ${relPath}\nError: ${errorMsg}`,
+				error: `读取文件错误：${errorMsg}`,
+				nativeContent: `文件：${relPath}\n错误：${errorMsg}`,
 			})
 
-			await task.say("error", `Error reading file ${relPath}: ${errorMsg}`)
+			await task.say("error", `读取文件 ${relPath} 时发生错误：${errorMsg}`)
 			task.didToolFailInCurrentTurn = true
 
 			const errorResult = fileResults
@@ -259,7 +259,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				.map((r) => r.nativeContent)
 				.join("\n\n---\n\n")
 
-			pushToolResult(errorResult || `Error: ${errorMsg}`)
+			pushToolResult(errorResult || `错误：${errorMsg}`)
 		}
 	}
 
@@ -289,14 +289,14 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				const nextOffset = end + 1
 				const effectiveLimit = entry.limit ?? DEFAULT_LINE_LIMIT
 				// Put truncation warning at TOP (before content) to match @ mention format
-				output = `IMPORTANT: File content truncated.
-	Status: Showing lines ${start}-${end} of ${result.totalLines} total lines.
-	To read more: Use the read_file tool with offset=${nextOffset} and limit=${effectiveLimit}.
+				output = `重要提示：文件内容已截断。
+	状态：正在显示总共 ${result.totalLines} 行中的第 ${start}-${end} 行。
+	了解更多：使用 read_file 工具，带有参数 offset=${nextOffset} 和 limit=${effectiveLimit}。
 	
 	${result.content}`
 			} else if (result.includedRanges.length > 0) {
 				const rangeStr = result.includedRanges.map(([s, e]) => `${s}-${e}`).join(", ")
-				output += `\n\nIncluded ranges: ${rangeStr} (total: ${result.totalLines} lines)`
+				output += `\n\n包含范围: ${rangeStr} (总共: ${result.totalLines} 行)`
 			}
 
 			return output
@@ -317,13 +317,13 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 			const endLine = offset1 + result.returnedLines - 1
 			const nextOffset = endLine + 1
 			// Put truncation warning at TOP (before content) to match @ mention format
-			output = `IMPORTANT: File content truncated.
-	Status: Showing lines ${startLine}-${endLine} of ${result.totalLines} total lines.
-	To read more: Use the read_file tool with offset=${nextOffset} and limit=${limit}.
+			output = `重要提示：文件内容已截断。
+状态：正在显示总共 ${result.totalLines} 行中的第 ${startLine}-${endLine} 行。
+了解更多：使用 read_file 工具，带有参数 offset=${nextOffset} 和 limit=${limit}。
 	
-	${result.content}`
+${result.content}`
 		} else if (result.returnedLines === 0) {
-			output = "Note: File is empty"
+			output = "提示：文件是空的"
 		}
 
 		return output
@@ -359,7 +359,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				if (!validationResult.isValid) {
 					await task.fileContextTracker.trackFileContext(relPath, "read_tool" as RecordSource)
 					updateFileResult(relPath, {
-						nativeContent: `File: ${relPath}\nNote: ${validationResult.notice}`,
+						nativeContent: `文件：${relPath}\n提示：${validationResult.notice}`,
 					})
 					return
 				}
@@ -369,7 +369,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				await task.fileContextTracker.trackFileContext(relPath, "read_tool" as RecordSource)
 
 				updateFileResult(relPath, {
-					nativeContent: `File: ${relPath}\nNote: ${imageResult.notice}`,
+					nativeContent: `文件：${relPath}\n提示：${imageResult.notice}`,
 					imageDataUrl: imageResult.dataUrl,
 				})
 				return
@@ -377,10 +377,10 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				const errorMsg = error instanceof Error ? error.message : String(error)
 				updateFileResult(relPath, {
 					status: "error",
-					error: `Error reading image file: ${errorMsg}`,
-					nativeContent: `File: ${relPath}\nError: ${errorMsg}`,
+					error: `读取图片文件错误：${errorMsg}`,
+					nativeContent: `文件：${relPath}\n错误：${errorMsg}`,
 				})
-				await task.say("error", `Error reading image file ${relPath}: ${errorMsg}`)
+				await task.say("error", `读取图片文件 ${relPath} 时出现错误：${errorMsg}`)
 				return
 			}
 		}
@@ -397,18 +397,18 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				updateFileResult(relPath, {
 					nativeContent:
 						lineCount > 0
-							? `File: ${relPath}\nLines 1-${lineCount}:\n${numberedContent}`
-							: `File: ${relPath}\nNote: File is empty`,
+							? `文件：${relPath}\n第 1-${lineCount} 行：\n${numberedContent}`
+							: `文件：${relPath}\n提示：文件是空的`,
 				})
 				return
 			} catch (error) {
 				const errorMsg = error instanceof Error ? error.message : String(error)
 				updateFileResult(relPath, {
 					status: "error",
-					error: `Error extracting text: ${errorMsg}`,
-					nativeContent: `File: ${relPath}\nError: ${errorMsg}`,
+					error: `无法提取文本：${errorMsg}`,
+					nativeContent: `文件：${relPath}\n错误：${errorMsg}`,
 				})
-				await task.say("error", `Error extracting text from ${relPath}: ${errorMsg}`)
+				await task.say("error", `无法从 ${relPath} 提取文本：${errorMsg}`)
 				return
 			}
 		}
@@ -416,8 +416,8 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 		// Unsupported binary format
 		const fileFormat = fileExtension.slice(1) || "bin"
 		updateFileResult(relPath, {
-			notice: `Binary file format: ${fileFormat}`,
-			nativeContent: `File: ${relPath}\nBinary file (${fileFormat}) - content not displayed`,
+			notice: `二进制文件格式：${fileFormat}`,
+			nativeContent: `文件：${relPath}\n二进制文件 (${fileFormat}) - 内容无法显示`,
 		})
 	}
 
@@ -459,7 +459,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				filesToApprove.forEach((fr) => {
 					updateFileResult(fr.path, {
 						status: "denied",
-						nativeContent: `File: ${fr.path}\nStatus: Denied by user`,
+						nativeContent: `文件：${fr.path}\n状态：被用户拒绝`,
 						feedbackText: text,
 						feedbackImages: images,
 					})
@@ -480,7 +480,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 							hasAnyDenial = true
 							updateFileResult(fileResult.path, {
 								status: "denied",
-								nativeContent: `File: ${fileResult.path}\nStatus: Denied by user`,
+								nativeContent: `文件：${fileResult.path}\n状态：被用户拒绝`,
 							})
 						}
 					})
@@ -491,7 +491,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 					filesToApprove.forEach((fr) => {
 						updateFileResult(fr.path, {
 							status: "denied",
-							nativeContent: `File: ${fr.path}\nStatus: Denied by user`,
+							nativeContent: `文件：${fr.path}\n状态：被用户拒绝`,
 						})
 					})
 				}
@@ -522,7 +522,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				task.didRejectTool = true
 				updateFileResult(relPath, {
 					status: "denied",
-					nativeContent: `File: ${relPath}\nStatus: Denied by user`,
+					nativeContent: `文件：${relPath}\n状态：被用户拒绝`,
 					feedbackText: text,
 					feedbackImages: images,
 				})
@@ -552,18 +552,18 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 		if (entry.mode === "indentation") {
 			// Always show indentation mode with the effective anchor line
 			const effectiveAnchor = entry.anchor_line ?? entry.offset ?? 1
-			return `(indentation mode at line ${effectiveAnchor})`
+			return `(位于 ${effectiveAnchor} 行的缩进模式)`
 		}
 
 		const limit = entry.limit ?? DEFAULT_LINE_LIMIT
 		const offset1 = entry.offset ?? 1
 
 		if (offset1 > 1) {
-			return `(lines ${offset1}-${offset1 + limit - 1})`
+			return `(第 ${offset1}-${offset1 + limit - 1} 行)`
 		}
 
 		// Always show the line limit, even when using the default
-		return `(up to ${limit} lines)`
+		return `(直到 ${limit} 行)`
 	}
 
 	/**
@@ -690,7 +690,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 			if (!accessAllowed) {
 				await task.say("rooignore_error", relPath)
 				const errorMsg = formatResponse.rooIgnoreError(relPath)
-				results.push(`File: ${relPath}\nError: ${errorMsg}`)
+				results.push(`文件：${relPath}\n错误：${errorMsg}`)
 				// Mirror the native path: a blocked file marks the tool turn as failed.
 				task.didToolFailInCurrentTurn = true
 				continue
@@ -717,7 +717,7 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 			if (response !== "yesButtonClicked") {
 				if (text) await task.say("user_feedback", text, images)
 				task.didRejectTool = true
-				results.push(`File: ${relPath}\nStatus: Denied by user`)
+				results.push(`文件：${relPath}\n状态：被用户拒绝`)
 				continue
 			}
 
@@ -727,9 +727,9 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 				// Check if the path is a directory
 				const stats = await fs.stat(fullPath)
 				if (stats.isDirectory()) {
-					const errorMsg = `Cannot read '${relPath}' because it is a directory.`
-					results.push(`File: ${relPath}\nError: ${errorMsg}`)
-					await task.say("error", `Error reading file ${relPath}: ${errorMsg}`)
+					const errorMsg = `无法读取 '${relPath}'，因为它是一个目录。`
+					results.push(`文件：${relPath}\n错误：${errorMsg}`)
+					await task.say("error", `读取文件 ${relPath} 时出现一个错误：${errorMsg}`)
 					// Mirror the native path: a failed read marks the tool turn as failed.
 					task.didToolFailInCurrentTurn = true
 					continue
@@ -754,15 +754,15 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 							0, // Legacy path doesn't track cumulative memory
 						)
 						if (!validation.isValid) {
-							results.push(`File: ${relPath}\nNotice: ${validation.notice ?? "Image validation failed"}`)
+							results.push(`文件：${relPath}\n提示：${validation.notice ?? "图片校验失败"}`)
 							continue
 						}
 						const imageResult = await processImageFile(fullPath)
 						if (imageResult) {
-							results.push(`File: ${relPath}\n[Image file - content processed for vision model]`)
+							results.push(`文件：${relPath}\n[图片文件 - 内容已由视觉模型处理]`)
 						}
 					} else {
-						results.push(`File: ${relPath}\nError: Cannot read binary file`)
+						results.push(`文件：${relPath}\n错误：无法读取二进制文件`)
 					}
 					continue
 				}
@@ -791,11 +791,11 @@ export class ReadFileTool extends BaseTool<"read_file"> {
 					const result = readWithSlice(rawContent, 0, DEFAULT_LINE_LIMIT)
 					content = result.content
 					if (result.wasTruncated) {
-						content += `\n\n[File truncated: showing ${result.returnedLines} of ${result.totalLines} total lines]`
+						content += `\n\n[文件已截断: 正在显示总共 ${result.totalLines} 行中的 ${result.returnedLines} 行]`
 					}
 				}
 
-				results.push(`File: ${relPath}\n${content}`)
+				results.push(`文件：${relPath}\n${content}`)
 
 				// Track file in context
 				await task.fileContextTracker.trackFileContext(relPath, "read_tool")

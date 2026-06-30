@@ -189,7 +189,7 @@ export async function regexSearchFiles(
 		output = await execRipgrep(rgPath, args)
 	} catch (error) {
 		console.error("Error executing ripgrep:", error)
-		return "No results found"
+		return "找不到结果"
 	}
 
 	const results: SearchFileResult[] = []
@@ -258,9 +258,9 @@ function formatResults(fileResults: SearchFileResult[], cwd: string): string {
 	const totalResults = fileResults.reduce((sum, file) => sum + file.searchResults.length, 0)
 	let output = ""
 	if (totalResults >= MAX_RESULTS) {
-		output += `Showing first ${MAX_RESULTS} of ${MAX_RESULTS}+ results. Use a more specific search if necessary.\n\n`
+		output += `正在显示 ${MAX_RESULTS}+ 个结果中的前 ${MAX_RESULTS} 个结果。如果有必要，请使用更有针对性的搜索。\n\n`
 	} else {
-		output += `Found ${totalResults === 1 ? "1 result" : `${totalResults.toLocaleString()} results`}.\n\n`
+		output += `找到了 ${totalResults === 1 ? "1 个结果" : `${totalResults.toLocaleString()} 个结果`}。\n\n`
 	}
 
 	// Group results by file name

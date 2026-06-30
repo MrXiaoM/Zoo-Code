@@ -77,7 +77,7 @@ export class NewTaskTool extends BaseTool<"new_task"> {
 					task.consecutiveMistakeCount++
 					task.recordToolError("new_task")
 					task.didToolFailInCurrentTurn = true
-					pushToolResult(formatResponse.toolError("Invalid todos format: must be a markdown checklist"))
+					pushToolResult(formatResponse.toolError("无效的 todo 格式：必须是 markdown checklist 格式"))
 					return
 				}
 			}
@@ -92,7 +92,7 @@ export class NewTaskTool extends BaseTool<"new_task"> {
 			const targetMode = getModeBySlug(mode, state?.customModes)
 
 			if (!targetMode) {
-				pushToolResult(formatResponse.toolError(`Invalid mode: ${mode}`))
+				pushToolResult(formatResponse.toolError(`无效的模式：${mode}`))
 				return
 			}
 
@@ -118,10 +118,10 @@ export class NewTaskTool extends BaseTool<"new_task"> {
 			})
 
 			// Reflect delegation in tool result (no pause/unpause, no wait)
-			pushToolResult(`Delegated to child task ${child.taskId}`)
+			pushToolResult(`已委托给子任务 ${child.taskId}`)
 			return
 		} catch (error) {
-			await handleError("creating new task", error)
+			await handleError("创建新任务", error)
 			return
 		}
 	}

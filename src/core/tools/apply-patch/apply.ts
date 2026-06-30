@@ -48,7 +48,7 @@ function computeReplacements(
 		if (chunk.changeContext !== null) {
 			const idx = seekSequence(originalLines, [chunk.changeContext], lineIndex, false)
 			if (idx === null) {
-				throw new ApplyPatchError(`Failed to find context '${chunk.changeContext}' in ${filePath}`)
+				throw new ApplyPatchError(`无法在文件 ${filePath} 中找到上下文 '${chunk.changeContext}'`)
 			}
 			lineIndex = idx + 1
 		}
@@ -83,7 +83,7 @@ function computeReplacements(
 			lineIndex = found + pattern.length
 		} else {
 			throw new ApplyPatchError(
-				`Failed to find expected lines in ${filePath}:\n${chunk.oldLines.join("\n").substring(0, 200)}${chunk.oldLines.join("\n").length > 200 ? "..." : ""}`,
+				`无法在文件 ${filePath} 中找到预期的行：\n${chunk.oldLines.join("\n").substring(0, 200)}${chunk.oldLines.join("\n").length > 200 ? "..." : ""}`,
 			)
 		}
 	}

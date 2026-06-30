@@ -114,9 +114,9 @@ export class ReadCommandOutputTool extends BaseTool<"read_command_output"> {
 			task.consecutiveMistakeCount++
 			task.recordToolError("read_command_output")
 			task.didToolFailInCurrentTurn = true
-			const errorMsg = `Invalid artifact_id format: "${artifact_id}". Expected format: cmd-{timestamp}.txt (e.g., "cmd-1706119234567.txt")`
+			const errorMsg = `无效的 artifact_id 格式："${artifact_id}"。期望的格式：cmd-{timestamp}.txt (例如："cmd-1706119234567.txt")`
 			await task.say("error", errorMsg)
-			pushToolResult(`Error: ${errorMsg}`)
+			pushToolResult(`错误：${errorMsg}`)
 			return
 		}
 
@@ -126,9 +126,9 @@ export class ReadCommandOutputTool extends BaseTool<"read_command_output"> {
 			const globalStoragePath = provider?.context?.globalStorageUri?.fsPath
 
 			if (!globalStoragePath) {
-				const errorMsg = "Unable to access command output storage. Global storage path is not available."
+				const errorMsg = "无法访问命令输出存储。全局存储路径不可用。"
 				await task.say("error", errorMsg)
-				pushToolResult(`Error: ${errorMsg}`)
+				pushToolResult(`错误：${errorMsg}`)
 				return
 			}
 
@@ -139,10 +139,10 @@ export class ReadCommandOutputTool extends BaseTool<"read_command_output"> {
 			try {
 				await fs.access(artifactPath)
 			} catch {
-				const errorMsg = `Artifact not found: "${artifact_id}". Please verify the artifact_id from the command output message. Available artifacts are created when command output exceeds the preview size.`
+				const errorMsg = `构件不存在："${artifact_id}"。请验证命令输出消息中的 artifact_id。可用的构件将会在命令输出大小超过预览大小时创建。`
 				await task.say("error", errorMsg)
 				task.didToolFailInCurrentTurn = true
-				pushToolResult(`Error: ${errorMsg}`)
+				pushToolResult(`错误：${errorMsg}`)
 				return
 			}
 
@@ -152,9 +152,9 @@ export class ReadCommandOutputTool extends BaseTool<"read_command_output"> {
 
 			// Validate offset
 			if (offset < 0 || offset >= totalSize) {
-				const errorMsg = `Invalid offset: ${offset}. File size is ${totalSize} bytes. Offset must be between 0 and ${totalSize - 1}.`
+				const errorMsg = `无效的偏移：${offset}。文件大小是 ${totalSize} bytes。偏移只能在 0 到 ${totalSize - 1} 之间。`
 				await task.say("error", errorMsg)
-				pushToolResult(`Error: ${errorMsg}`)
+				pushToolResult(`错误：${errorMsg}`)
 				return
 			}
 
@@ -260,8 +260,8 @@ export class ReadCommandOutputTool extends BaseTool<"read_command_output"> {
 			const numberedContent = this.addLineNumbers(content, startLineNumber)
 
 			const header = [
-				`[Command Output: ${artifactId}]`,
-				`Total size: ${this.formatBytes(totalSize)} | Showing bytes ${offset}-${endOffset} | ${truncated ? "TRUNCATED" : "COMPLETE"}`,
+				`[命令输出：${artifactId}]`,
+				`总大小：${this.formatBytes(totalSize)} | 显示字节位置 ${offset}-${endOffset} | ${truncated ? "已截断" : "完整"}`,
 				"",
 			].join("\n")
 
@@ -373,10 +373,10 @@ export class ReadCommandOutputTool extends BaseTool<"read_command_output"> {
 
 		if (matches.length === 0) {
 			const content = [
-				`[Command Output: ${artifactId}] (search: "${pattern}")`,
-				`Total size: ${this.formatBytes(totalSize)}`,
+				`[命令输出：${artifactId}] (搜索："${pattern}")`,
+				`总大小：${this.formatBytes(totalSize)}`,
 				"",
-				"No matches found for the search pattern.",
+				"没有找到匹配的搜索结果。",
 			].join("\n")
 			return { content, matchCount: 0 }
 		}
@@ -385,8 +385,8 @@ export class ReadCommandOutputTool extends BaseTool<"read_command_output"> {
 		const matchedLines = matches.map((m) => `${String(m.lineNumber).padStart(5)} | ${m.content}`).join("\n")
 
 		const content = [
-			`[Command Output: ${artifactId}] (search: "${pattern}")`,
-			`Total matches: ${matches.length} | Showing first ${matches.length}`,
+			`[命令输出：${artifactId}] (搜索："${pattern}")`,
+			`总匹配数：${matches.length} | 显示第 ${matches.length} 个匹配项`,
 			"",
 			matchedLines,
 		].join("\n")

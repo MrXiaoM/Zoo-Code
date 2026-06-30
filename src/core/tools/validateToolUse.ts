@@ -42,7 +42,7 @@ export function validateToolUse(
 	// This catches completely invalid tool names like "edit_file" that don't exist
 	if (!isValidToolName(toolName, experiments)) {
 		throw new Error(
-			`Unknown tool "${toolName}". This tool does not exist. Please use one of the available tools: ${validToolNames.join(", ")}.`,
+			`未知工具 "${toolName}"。这个工具不存在，请使用其中一个可用的工具：${validToolNames.join(", ")}.`,
 		)
 	}
 
@@ -58,7 +58,7 @@ export function validateToolUse(
 			includedTools,
 		)
 	) {
-		throw new Error(`Tool "${toolName}" is not allowed in ${mode} mode.`)
+		throw new Error(`工具 "${toolName}" 不被允许在 ${mode} 模式中使用。`)
 	}
 }
 

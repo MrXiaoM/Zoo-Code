@@ -61,7 +61,7 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 			if (!fileExists) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("apply_diff")
-				const formattedError = `File does not exist at path: ${absolutePath}\n\n<error_details>\nThe specified file could not be found. Please verify the file path and try again.\n</error_details>`
+				const formattedError = `指定路径的文件不存在：${absolutePath}\n\n<error_details>\n找不到指定的文件。请验证文件路径，然后重试。\n</error_details>`
 				await task.say("error", formattedError)
 				task.didToolFailInCurrentTurn = true
 				pushToolResult(formattedError)
@@ -77,7 +77,7 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 				parseInt(params.diff.match(/:start_line:(\d+)/)?.[1] ?? ""),
 			)) ?? {
 				success: false,
-				error: "No diff strategy available",
+				error: "没有可用的 diff 策略",
 			}
 
 			if (!diffResult.success) {
@@ -97,14 +97,14 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 
 						formattedError = `<error_details>\n${
 							failPart.error
-						}${errorDetails ? `\n\nDetails:\n${errorDetails}` : ""}\n</error_details>`
+						}${errorDetails ? `\n\n详情：\n${errorDetails}` : ""}\n</error_details>`
 					}
 				} else {
 					const errorDetails = diffResult.details ? JSON.stringify(diffResult.details, null, 2) : ""
 
-					formattedError = `Unable to apply diff to file: ${absolutePath}\n\n<error_details>\n${
+					formattedError = `无法应用 diff 到文件：${absolutePath}\n\n<error_details>\n${
 						diffResult.error
-					}${errorDetails ? `\n\nDetails:\n${errorDetails}` : ""}\n</error_details>`
+					}${errorDetails ? `\n\n详情：\n${errorDetails}` : ""}\n</error_details>`
 				}
 
 				if (currentCount >= 2) {
@@ -234,7 +234,7 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 			let partFailHint = ""
 
 			if (diffResult.failParts && diffResult.failParts.length > 0) {
-				partFailHint = `But unable to apply all diff parts to file: ${absolutePath}. Use the read_file tool to check the newest file version and re-apply diffs.\n`
+				partFailHint = `但无法将所有 diff 部分应用于文件：${absolutePath}。使用 read_file 工具检查最新文件版本并重新应用 diff。\n`
 			}
 
 			// Get the formatted response message
@@ -244,7 +244,7 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 			const searchBlocks = (diffContent.match(/<<<<<<< SEARCH/g) || []).length
 			const singleBlockNotice =
 				searchBlocks === 1
-					? "\n<notice>Making multiple related changes in a single apply_diff is more efficient. If other changes are needed in this file, please include them as additional SEARCH/REPLACE blocks.</notice>"
+					? "\n<notice>使用一个 apply_diff 做多次相关更改会更高效。如果需要对这个文件应用其它变更，请将它们包含到额外的 SEARCH/REPLACE 块里面。</notice>"
 					: ""
 
 			if (partFailHint) {

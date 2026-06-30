@@ -34,7 +34,7 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 			if (!targetMode) {
 				task.recordToolError("switch_mode")
 				task.didToolFailInCurrentTurn = true
-				pushToolResult(formatResponse.toolError(`Invalid mode: ${mode_slug}`))
+				pushToolResult(formatResponse.toolError(`无效的模式：${mode_slug}`))
 				return
 			}
 
@@ -44,7 +44,7 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 			if (currentMode === mode_slug) {
 				task.recordToolError("switch_mode")
 				task.didToolFailInCurrentTurn = true
-				pushToolResult(`Already in ${targetMode.name} mode.`)
+				pushToolResult(`已经在 ${targetMode.name} 模式中了。`)
 				return
 			}
 
@@ -59,9 +59,9 @@ export class SwitchModeTool extends BaseTool<"switch_mode"> {
 			await task.providerRef.deref()?.handleModeSwitch(mode_slug)
 
 			pushToolResult(
-				`Successfully switched from ${getModeBySlug(currentMode)?.name ?? currentMode} mode to ${
+				`已成功从 ${getModeBySlug(currentMode)?.name ?? currentMode} 模式切换为 ${
 					targetMode.name
-				} mode${reason ? ` because: ${reason}` : ""}.`,
+				} 模式${reason ? `，原因：${reason}` : ""}.`,
 			)
 
 			await delay(500) // Delay to allow mode change to take effect before next tool is executed

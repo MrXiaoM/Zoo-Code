@@ -29,7 +29,7 @@ export class UpdateTodoListTool extends BaseTool<"update_todo_list"> {
 				task.consecutiveMistakeCount++
 				task.recordToolError("update_todo_list")
 				task.didToolFailInCurrentTurn = true
-				pushToolResult(formatResponse.toolError("The todos parameter is not valid markdown checklist or JSON"))
+				pushToolResult(formatResponse.toolError("参数 todos 不是有效的 markdown checklist 或 JSON"))
 				return
 			}
 
@@ -38,7 +38,7 @@ export class UpdateTodoListTool extends BaseTool<"update_todo_list"> {
 				task.consecutiveMistakeCount++
 				task.recordToolError("update_todo_list")
 				task.didToolFailInCurrentTurn = true
-				pushToolResult(formatResponse.toolError(error || "todos parameter validation failed"))
+				pushToolResult(formatResponse.toolError(error || "todos 参数校验失败"))
 				return
 			}
 
@@ -56,7 +56,7 @@ export class UpdateTodoListTool extends BaseTool<"update_todo_list"> {
 			approvedTodoList = cloneDeep(normalizedTodos)
 			const didApprove = await askApproval("tool", approvalMsg)
 			if (!didApprove) {
-				pushToolResult("User declined to update the todoList.")
+				pushToolResult("用户拒绝了更新 todoList。")
 				return
 			}
 
@@ -77,9 +77,9 @@ export class UpdateTodoListTool extends BaseTool<"update_todo_list"> {
 
 			if (isTodoListChanged) {
 				const md = todoListToMarkdown(normalizedTodos)
-				pushToolResult(formatResponse.toolResult("User edits todo:\n\n" + md))
+				pushToolResult(formatResponse.toolResult("用户编辑 todo:\n\n" + md))
 			} else {
-				pushToolResult(formatResponse.toolResult("Todo list updated successfully."))
+				pushToolResult(formatResponse.toolResult("Todo 列表已更新成功。"))
 			}
 		} catch (error) {
 			await handleError("update todo list", error as Error)
@@ -206,14 +206,13 @@ export function setPendingTodoList(todos: TodoItem[]) {
 }
 
 function validateTodos(todos: any[]): { valid: boolean; error?: string } {
-	if (!Array.isArray(todos)) return { valid: false, error: "todos must be an array" }
+	if (!Array.isArray(todos)) return { valid: false, error: "todos 必须为数组" }
 	for (const [i, t] of todos.entries()) {
-		if (!t || typeof t !== "object") return { valid: false, error: `Item ${i + 1} is not an object` }
-		if (!t.id || typeof t.id !== "string") return { valid: false, error: `Item ${i + 1} is missing id` }
-		if (!t.content || typeof t.content !== "string")
-			return { valid: false, error: `Item ${i + 1} is missing content` }
+		if (!t || typeof t !== "object") return { valid: false, error: `条目 ${i + 1} 不是一个 object` }
+		if (!t.id || typeof t.id !== "string") return { valid: false, error: `条目 ${i + 1} 缺少 id` }
+		if (!t.content || typeof t.content !== "string") return { valid: false, error: `条目 ${i + 1} 缺少 content` }
 		if (t.status && !todoStatusSchema.options.includes(t.status as TodoStatus))
-			return { valid: false, error: `Item ${i + 1} has invalid status` }
+			return { valid: false, error: `条目 ${i + 1} 的 status 无效` }
 	}
 	return { valid: true }
 }

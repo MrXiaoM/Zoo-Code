@@ -55,9 +55,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 			if (old_string === new_string) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("search_replace")
-				pushToolResult(
-					formatResponse.toolError("The 'old_string' and 'new_string' parameters must be different."),
-				)
+				pushToolResult(formatResponse.toolError("参数 'old_string' 和 'new_string' 必须不相同。"))
 				return
 			}
 
@@ -86,7 +84,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 			if (!fileExists) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("search_replace")
-				const errorMessage = `File not found: ${relPath}. Cannot perform search and replace on a non-existent file.`
+				const errorMessage = `文件不存在：${relPath}。无法对不存在的文件执行搜索和替换操作。`
 				await task.say("error", errorMessage)
 				pushToolResult(formatResponse.toolError(errorMessage))
 				return
@@ -100,7 +98,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 			} catch (error) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("search_replace")
-				const errorMessage = `Failed to read file '${relPath}'. Please verify file permissions and try again.`
+				const errorMessage = `无法读取文件 '${relPath}'。请验证文件权限并重试。`
 				await task.say("error", errorMessage)
 				pushToolResult(formatResponse.toolError(errorMessage))
 				return
@@ -118,7 +116,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 				task.recordToolError("search_replace", "no_match")
 				pushToolResult(
 					formatResponse.toolError(
-						`No match found for the specified 'old_string'. Please ensure it matches the file contents exactly, including whitespace and indentation.`,
+						`指定的 'old_string' 无法进行匹配。请确保它完全匹配文件内容，包括空白符和缩进。`,
 					),
 				)
 				return
@@ -129,7 +127,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 				task.recordToolError("search_replace", "multiple_matches")
 				pushToolResult(
 					formatResponse.toolError(
-						`Found ${matchCount} matches for the specified 'old_string'. This tool can only replace ONE occurrence at a time. Please provide more context (3-5 lines before and after) to uniquely identify the specific instance you want to change.`,
+						`使用指定的 'old_string' 找到了 ${matchCount} 个匹配结果。这个工具每次只能替换【1】个结果。请提供更多上下文 (前后的 3-5 行内容) 以唯一化你要更改的内容。`,
 					),
 				)
 				return
@@ -140,7 +138,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 
 			// Check if any changes were made
 			if (newContent === fileContent) {
-				pushToolResult(`No changes needed for '${relPath}'`)
+				pushToolResult(`对于文件 '${relPath}' 来说，没有需要的变更`)
 				return
 			}
 
@@ -153,7 +151,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 			// Generate and validate diff
 			const diff = formatResponse.createPrettyPatch(relPath, fileContent, newContent)
 			if (!diff) {
-				pushToolResult(`No changes needed for '${relPath}'`)
+				pushToolResult(`对于文件 '${relPath}' 来说，没有需要的变更`)
 				await task.diffViewProvider.reset()
 				return
 			}
@@ -200,7 +198,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 				if (!isPreventFocusDisruptionEnabled) {
 					await task.diffViewProvider.revertChanges()
 				}
-				pushToolResult("Changes were rejected by the user.")
+				pushToolResult("此变更已被用户拒绝。")
 				await task.diffViewProvider.reset()
 				return
 			}
@@ -252,7 +250,7 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 		if (oldString) {
 			// Show a preview of what will be replaced
 			const preview = oldString.length > 50 ? oldString.substring(0, 50) + "..." : oldString
-			operationPreview = `replacing: "${preview}"`
+			operationPreview = `正在替换: "${preview}"`
 		}
 
 		// Determine relative path for display (filePath is guaranteed non-null after hasPathStabilized)

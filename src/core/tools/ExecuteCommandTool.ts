@@ -223,10 +223,10 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 
 					if (error instanceof ShellIntegrationError) {
 						pushToolResult(
-							"Command was submitted in the VS Code terminal, but shell integration did not report its output or completion status. Do not run the command again automatically.",
+							"命令已被提交到 VS Code 终端，但终端没有报告它的输出或者完成状态。不要再次自动执行命令。",
 						)
 					} else {
-						pushToolResult(`Command failed to execute in terminal due to a shell integration error.`)
+						pushToolResult(`由于终端整合出现错误，终端中的命令执行失败。`)
 					}
 				}
 			}
@@ -279,7 +279,7 @@ export async function executeCommandInTerminal(
 	try {
 		await fs.access(workingDir)
 	} catch (error) {
-		return [false, `Working directory '${workingDir}' does not exist.`]
+		return [false, `指定的工作目录 '${workingDir}' 不存在。`]
 	}
 
 	let message: { text?: string; images?: string[] } | undefined
@@ -513,7 +513,7 @@ export async function executeCommandInTerminal(
 					userTimeoutId = setTimeout(() => {
 						isUserTimedOut = true
 						task.terminalProcess?.abort()
-						reject(new Error(`Command execution timed out after ${commandExecutionTimeout}ms`))
+						reject(new Error(`在 ${commandExecutionTimeout}ms 后，命令执行超时`))
 					}, commandExecutionTimeout)
 				}),
 			)
@@ -559,7 +559,7 @@ export async function executeCommandInTerminal(
 
 			return [
 				false,
-				`The command was terminated after exceeding a user-configured ${commandExecutionTimeoutSeconds}s timeout. Do not try to re-run the command.`,
+				`命令执行后的 ${commandExecutionTimeoutSeconds}s 后，因为超过了用户配置的超时时间而被终止。不要尝试重新运行命令。`,
 			]
 		}
 		throw error
@@ -589,9 +589,9 @@ export async function executeCommandInTerminal(
 		return [
 			false,
 			[
-				`Command was submitted in terminal within working directory '${currentWorkingDir}', but the terminal did not report its completion status within the expected time (likely a shell integration problem).`,
-				result.length > 0 ? `Here's the output captured so far:\n${result}\n` : "\n",
-				"The command may have actually completed. Do not automatically re-run it; check the terminal or ask the user if you need to confirm the result.",
+				`命令已被提交到终端，工作目录为 '${currentWorkingDir}'，但终端没有在预期时间内报告它的完成状态（可能是终端整合的问题）。`,
+				result.length > 0 ? `这是目前为止的输出截取内容：\n${result}\n` : "\n",
+				"命令可能实际上已经完成。不要自动重新运行；如果你需要确认结果，请检查终端或者询问用户。",
 			].join("\n"),
 		]
 	}
@@ -618,8 +618,8 @@ export async function executeCommandInTerminal(
 			true,
 			formatResponse.toolResult(
 				[
-					`Command is still running in terminal from '${terminal.getCurrentWorkingDirectory().toPosix()}'.`,
-					result.length > 0 ? `Here's the output so far:\n${result}\n` : "\n",
+					`来自 '${terminal.getCurrentWorkingDirectory().toPosix()}' 的终端依旧在运行命令。`,
+					result.length > 0 ? `这是目前为止的输出：\n${result}\n` : "\n",
 					`<user_message>\n${text}\n</user_message>`,
 				].join("\n"),
 				images,
@@ -635,24 +635,21 @@ export async function executeCommandInTerminal(
 
 		// Use inline format for small outputs (original behavior with exit status).
 		if (exitDetails === undefined) {
-			result += "<VSCE exitDetails == undefined: terminal output and command execution status is unknown.>"
+			result += "<VSCE exitDetails == undefined: 终端输出与命令执行状态未知。>"
 		} else if (!exitDetails.signalName && exitDetails.exitCode === undefined) {
-			result += "<VSCE exit code is undefined: terminal output and command execution status is unknown.>"
+			result += "<VSCE exit code is undefined: 终端输出与命令执行状态未知。>"
 		}
 
 		const exitStatus = formatExitStatus(exitDetails)
 
-		return [
-			false,
-			`Command executed in terminal within working directory '${currentWorkingDir}'. ${exitStatus}\nOutput:\n${result}`,
-		]
+		return [false, `在工作目录 '${currentWorkingDir}' 的终端命令已执行完成。${exitStatus}\n输出：\n${result}`]
 	} else {
 		return [
 			false,
 			[
-				`Command is still running in terminal ${workingDir ? ` from '${workingDir.toPosix()}'` : ""}.`,
-				result.length > 0 ? `Here's the output so far:\n${result}\n` : "\n",
-				"You will be updated on the terminal status and new output in the future.",
+				`${workingDir ? `来自 '${workingDir.toPosix()}' 的` : ""}终端依然在运行命令。`,
+				result.length > 0 ? `这是目前为止的输出：\n${result}\n` : "\n",
+				"你将会在未来收到新的终端状态和新的输出更新。",
 			].join("\n"),
 		]
 	}
@@ -663,26 +660,26 @@ export async function executeCommandInTerminal(
  */
 function formatExitStatus(exitDetails: ExitCodeDetails | undefined): string {
 	if (exitDetails === undefined) {
-		return "Exit code: <undefined, notify user>"
+		return "退出码：<undefined, 通知用户>"
 	}
 
 	if (exitDetails.signalName) {
-		let status = `Process terminated by signal ${exitDetails.signalName}`
+		let status = `进程已由信号 ${exitDetails.signalName} 终止`
 		if (exitDetails.coreDumpPossible) {
-			status += " - core dump possible"
+			status += " - 可能核心转储"
 		}
 		return status
 	}
 
 	if (exitDetails.exitCode === undefined) {
-		return "Exit code: <undefined, notify user>"
+		return "退出码：<undefined, 通知用户>"
 	}
 
 	let status = ""
 	if (exitDetails.exitCode !== 0) {
-		status += "Command execution was not successful, inspect the cause and adjust as needed.\n"
+		status += "命令执行不成功，如果需要的话，请检查原因并进行调整。\n"
 	}
-	status += `Exit code: ${exitDetails.exitCode}`
+	status += `退出码：${exitDetails.exitCode}`
 	return status
 }
 
@@ -699,14 +696,14 @@ function formatPersistedOutput(
 	const artifactId = result.artifactPath ? path.basename(result.artifactPath) : ""
 
 	return [
-		`Command executed in '${workingDir}'. ${exitStatus}`,
+		`命令已在 '${workingDir}' 执行. ${exitStatus}`,
 		"",
-		`Output (${sizeStr}) persisted. Artifact ID: ${artifactId}`,
+		`输出 (${sizeStr}) 已持久化。构件 ID: ${artifactId}`,
 		"",
-		"Preview:",
+		"预览：",
 		result.preview,
 		"",
-		"Use read_command_output tool to view full output if needed.",
+		"如果有需要，请使用 read_command_output 工具来查看完整输出。",
 	].join("\n")
 }
 

@@ -83,16 +83,16 @@ function formatFileReadResult(filePath: string, result: ExtractTextResult): stri
 		const [start, end] = result.linesShown
 		const nextOffset = end + 1
 		return `${header}
-IMPORTANT: File content truncated.
-Status: Showing lines ${start}-${end} of ${result.totalLines} total lines.
-To read more: Use the read_file tool with offset=${nextOffset} and limit=${DEFAULT_LINE_LIMIT}.
+重要提示：文件内容已截断。
+状态：正在显示总共 ${result.totalLines} 行中的第 ${start}-${end} 行。
+了解更多：使用 read_file 工具，带有参数 offset=${nextOffset} 和 limit=${DEFAULT_LINE_LIMIT}。
 
-File: ${filePath}
+文件：${filePath}
 ${result.content}`
 	}
 
 	return `${header}
-File: ${filePath}
+文件：${filePath}
 ${result.content}`
 }
 

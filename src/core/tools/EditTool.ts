@@ -58,7 +58,7 @@ export class EditTool extends BaseTool<"edit"> {
 				task.recordToolError("edit")
 				pushToolResult(
 					formatResponse.toolError(
-						"'old_string' and 'new_string' are identical. No changes needed. If you want to make a change, ensure 'old_string' and 'new_string' are different.",
+						"'old_string' 和 'new_string' 是相同的。没有需要的变更。如果你想要产生文件变更，请确保 'old_string' 和 'new_string' 是不同的。",
 					),
 				)
 				return
@@ -81,7 +81,7 @@ export class EditTool extends BaseTool<"edit"> {
 			if (!fileExists) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("edit")
-				const errorMessage = `File not found: ${relPath}. Cannot perform edit on a non-existent file.`
+				const errorMessage = `文件不存在：${relPath}。无法编辑一个不存在的文件。`
 				await task.say("error", errorMessage)
 				pushToolResult(formatResponse.toolError(errorMessage))
 				return
@@ -95,7 +95,7 @@ export class EditTool extends BaseTool<"edit"> {
 			} catch (error) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("edit")
-				const errorMessage = `Failed to read file '${relPath}'. Please verify file permissions and try again.`
+				const errorMessage = `读取文件 '${relPath}' 失败。请验证文件权限并重试。`
 				await task.say("error", errorMessage)
 				pushToolResult(formatResponse.toolError(errorMessage))
 				return
@@ -113,7 +113,7 @@ export class EditTool extends BaseTool<"edit"> {
 				task.recordToolError("edit", "no_match")
 				pushToolResult(
 					formatResponse.toolError(
-						`No match found for 'old_string' in ${relPath}. Make sure the text to find appears exactly in the file, including whitespace and indentation.`,
+						`在文件 ${relPath} 中没有匹配的 'old_string'。请确保要搜索的文本精确地存在于文件中，需要包括空白符和缩进。`,
 					),
 				)
 				return
@@ -125,7 +125,7 @@ export class EditTool extends BaseTool<"edit"> {
 				task.recordToolError("edit")
 				pushToolResult(
 					formatResponse.toolError(
-						`Found ${matchCount} matches of 'old_string' in the file. Use 'replace_all: true' to replace all occurrences, or provide more context in 'old_string' to make it unique.`,
+						`在这个文件中找到了 'old_string' 的 ${matchCount} 次匹配。使用 'replace_all: true' 来替换所有匹配，或者提供更多上下文让 'old_string' 能够唯一匹配。`,
 					),
 				)
 				return
@@ -144,7 +144,7 @@ export class EditTool extends BaseTool<"edit"> {
 
 			// Check if any changes were made
 			if (newContent === fileContent) {
-				pushToolResult(`No changes needed for '${relPath}'`)
+				pushToolResult(`对于文件 '${relPath}' 来说，没有需要的变更`)
 				return
 			}
 
@@ -157,7 +157,7 @@ export class EditTool extends BaseTool<"edit"> {
 			// Generate and validate diff
 			const diff = formatResponse.createPrettyPatch(relPath, fileContent, newContent)
 			if (!diff) {
-				pushToolResult(`No changes needed for '${relPath}'`)
+				pushToolResult(`对于文件 '${relPath}' 来说，没有需要的变更`)
 				await task.diffViewProvider.reset()
 				return
 			}
@@ -204,7 +204,7 @@ export class EditTool extends BaseTool<"edit"> {
 				if (!isPreventFocusDisruptionEnabled) {
 					await task.diffViewProvider.revertChanges()
 				}
-				pushToolResult("Changes were rejected by the user.")
+				pushToolResult("此变更已被用户拒绝。")
 				await task.diffViewProvider.reset()
 				return
 			}
@@ -258,7 +258,7 @@ export class EditTool extends BaseTool<"edit"> {
 		const sharedMessageProps: ClineSayTool = {
 			tool: "appliedDiff",
 			path: getReadablePath(task.cwd, relPath!),
-			diff: block.params.old_string ? "1 edit operation" : undefined,
+			diff: block.params.old_string ? "1 个编辑操作" : undefined,
 			isOutsideWorkspace,
 		}
 

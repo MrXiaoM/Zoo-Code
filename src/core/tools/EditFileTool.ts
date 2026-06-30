@@ -200,10 +200,10 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 
 			operationPreviewForErrorHandling =
 				old_string === ""
-					? "creating new file"
+					? "正在创建新文件"
 					: (() => {
 							const preview = old_string.length > 50 ? old_string.substring(0, 50) + "..." : old_string
-							return `replacing: "${preview}"`
+							return `正在替换："${preview}"`
 						})()
 
 			const accessAllowed = task.rooIgnoreController?.validateAccess(relPath)
@@ -239,7 +239,16 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 					task.consecutiveMistakeCount++
 					task.didToolFailInCurrentTurn = true
 					const errorDetails = error instanceof Error ? error.message : String(error)
-					const formattedError = `Failed to read file: ${absolutePath}\n\n<error_details>\nRead error: ${errorDetails}\n\nRecovery suggestions:\n1. Verify the file exists and is readable\n2. Check file permissions\n3. If the file may have changed, use read_file to confirm its current contents\n</error_details>`
+					const formattedError = `无法读取文件：${absolutePath}
+
+<error_details>
+读取错误：${errorDetails}
+
+恢复建议：
+1. 验证文件是否存在且是否可读
+2. 检查文件权限
+3. 如果文件可能已被更改，使用 read_file 来确认它的当前内容
+</error_details>`
 					await finalizePartialToolAskIfNeeded(relPath)
 					await recordFailureForPathAndMaybeEscalate(relPath, formattedError)
 					task.recordToolError("edit_file", formattedError)
@@ -251,7 +260,16 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 				if (old_string === "") {
 					task.consecutiveMistakeCount++
 					task.didToolFailInCurrentTurn = true
-					const formattedError = `File already exists: ${absolutePath}\n\n<error_details>\nYou provided an empty old_string, which indicates file creation, but the target file already exists.\n\nRecovery suggestions:\n1. To modify an existing file, provide a non-empty old_string that matches the current file contents\n2. Use read_file to confirm the exact text to match\n3. If you intended to overwrite the entire file, use write_to_file instead\n</error_details>`
+					const formattedError = `文件已经存在：${absolutePath}
+
+<error_details>
+你提供了空的 old_string，这表明了需要创建文件，但目标文件已经存在了。
+
+恢复建议：
+1. 修改已经存在的文件，提供非空的 old_string 以匹配当前文件内容
+2. 使用 read_file 来确认要匹配的具体文本
+3. 如果你要重写整个文件，请使用 write_to_file 代替
+</error_details>`
 					await finalizePartialToolAskIfNeeded(relPath)
 					await recordFailureForPathAndMaybeEscalate(relPath, formattedError)
 					task.recordToolError("edit_file", formattedError)
@@ -267,7 +285,16 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 					// Trying to replace in non-existent file
 					task.consecutiveMistakeCount++
 					task.didToolFailInCurrentTurn = true
-					const formattedError = `File does not exist at path: ${absolutePath}\n\n<error_details>\nThe specified file could not be found, so the replacement could not be performed.\n\nRecovery suggestions:\n1. Verify the file path is correct\n2. If you intended to create a new file, set old_string to an empty string\n3. Use list_files or read_file to confirm the correct path\n</error_details>`
+					const formattedError = `路径指定的文件不存在：${absolutePath}
+
+<error_details>
+找不到指定的文件，所以替换操作无法被执行。
+
+恢复建议：
+1. 验证文件路径是否正确
+2. 如果你要创建一个新文件，请设置 old_string 为空字符串
+3. 使用 list_files 或 read_file 来确认路径是否正确
+</error_details>`
 					// Match apply_diff behavior: surface missing file via the generic error channel.
 					await finalizePartialToolAskIfNeeded(relPath)
 					await task.say("error", formattedError)
@@ -288,7 +315,15 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 				if (oldLF === newLF) {
 					task.consecutiveMistakeCount++
 					task.didToolFailInCurrentTurn = true
-					const formattedError = `No changes to apply for file: ${absolutePath}\n\n<error_details>\nThe provided old_string and new_string are identical (after normalizing line endings), so there is nothing to change.\n\nRecovery suggestions:\n1. Update new_string to the intended replacement text\n2. If you intended to verify file state only, use read_file instead\n</error_details>`
+					const formattedError = `需要编辑的文件没有变更：${absolutePath}
+
+<error_details>
+提供的 old_string 和 new_string（在归一化行号之后）是相同的，所以没有产生变更。
+
+恢复建议：
+1. 更新 new_string 到要替换为的文本
+2. 如果你仅仅需要验证文件状态，请使用 read_file 代替
+</error_details>`
 					await finalizePartialToolAskIfNeeded(relPath)
 					await recordFailureForPathAndMaybeEscalate(relPath, formattedError)
 					task.recordToolError("edit_file", formattedError)
@@ -320,7 +355,17 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 							if (!anyMatches) {
 								task.consecutiveMistakeCount++
 								task.didToolFailInCurrentTurn = true
-								const formattedError = `No match found in file: ${absolutePath}\n\n<error_details>\nThe provided old_string could not be found using exact, whitespace-tolerant, or token-based matching.\n\nRecovery suggestions:\n1. Use read_file to confirm the file's current contents\n2. Ensure old_string matches exactly (including whitespace/indentation and line endings)\n3. Provide more surrounding context in old_string to make the match unique\n4. If the file has changed since you constructed old_string, re-read and retry\n</error_details>`
+								const formattedError = `文件中没有匹配的文本：${absolutePath}
+
+<error_details>
+提供的 old_string 无法使用精确的、容忍空白符、或基于 token 的任意方式匹配。
+
+恢复建议：
+1. 使用 read_file 来确认当前文件内容
+2. 确保 old_string 完全精确匹配 (包括空白符、缩进，以及行尾)
+3. 在 old_string 中提供更多周围的内容，以确保匹配区域唯一
+4. 如果文件在你构造 old_string 后发生更改，请重新读取并重试
+</error_details>`
 								await finalizePartialToolAskIfNeeded(relPath)
 								await recordFailureForPathAndMaybeEscalate(relPath, formattedError)
 								task.recordToolError("edit_file", formattedError)
@@ -332,7 +377,16 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 							if (exactOccurrences > 0) {
 								task.consecutiveMistakeCount++
 								task.didToolFailInCurrentTurn = true
-								const formattedError = `Occurrence count mismatch in file: ${absolutePath}\n\n<error_details>\nExpected ${expectedReplacements} occurrence(s) but found ${exactOccurrences} exact match(es).\n\nRecovery suggestions:\n1. Provide a more specific old_string so it matches exactly once\n2. If you intend to replace all occurrences, set expected_replacements to ${exactOccurrences}\n3. Use read_file to confirm the exact text and counts\n</error_details>`
+								const formattedError = `文件中的发生次数不匹配：${absolutePath}
+
+<error_details>
+期望发生 ${expectedReplacements} 次匹配，但实际匹配了 ${exactOccurrences} 次。
+
+恢复建议：
+1. 提供更具体的 old_string 以便于精确匹配一次
+2. 如果你要替换所有发生的匹配，设置 expected_replacements 为 ${exactOccurrences}
+3. 使用 read_file 来确认精确的文本以及匹配次数
+</error_details>`
 								await finalizePartialToolAskIfNeeded(relPath)
 								await recordFailureForPathAndMaybeEscalate(relPath, formattedError)
 								task.recordToolError("edit_file", formattedError)
@@ -342,7 +396,16 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 
 							task.consecutiveMistakeCount++
 							task.didToolFailInCurrentTurn = true
-							const formattedError = `Occurrence count mismatch in file: ${absolutePath}\n\n<error_details>\nExpected ${expectedReplacements} occurrence(s), but matching found ${wsOccurrences} (whitespace-tolerant) and ${tokenOccurrences} (token-based).\n\nRecovery suggestions:\n1. Provide more surrounding context in old_string to make the match unique\n2. If multiple replacements are intended, adjust expected_replacements to the intended count\n3. Use read_file to confirm the current file contents and refine the match\n</error_details>`
+							const formattedError = `文件中的发生次数不匹配：${absolutePath}
+
+<error_details>
+期望发生 ${expectedReplacements} 次匹配，但实际匹配了 ${wsOccurrences} 次 (空白符容忍) 以及 ${tokenOccurrences} 次 (基于 token)。
+
+恢复建议：
+1. 在 old_string 中提供更多周围的上下文，使得匹配唯一
+2. 如果需要多次替换，调整 expected_replacements 为需要的次数
+3. 使用 read_file 来确认当前文件内容，并重新改善匹配内容
+</error_details>`
 							await finalizePartialToolAskIfNeeded(relPath)
 							await recordFailureForPathAndMaybeEscalate(relPath, formattedError)
 							task.recordToolError("edit_file", formattedError)
@@ -365,7 +428,7 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 					task.consecutiveMistakeCountForEditFile.delete(relPathForErrorHandling)
 				}
 				await finalizePartialToolAskIfNeeded(relPath)
-				pushToolResult(`No changes needed for '${relPath}'`)
+				pushToolResult(`对于文件 '${relPath}' 来说，没有需要的变更`)
 				return
 			}
 
@@ -382,7 +445,7 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 				task.consecutiveMistakeCount = 0
 				task.consecutiveMistakeCountForEditFile.delete(relPath)
 				await finalizePartialToolAskIfNeeded(relPath)
-				pushToolResult(`No changes needed for '${relPath}'`)
+				pushToolResult(`对于文件 '${relPath}' 来说，没有需要的变更`)
 				await task.diffViewProvider.reset()
 				return
 			}
@@ -429,7 +492,7 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 				if (!isPreventFocusDisruptionEnabled) {
 					await task.diffViewProvider.revertChanges()
 				}
-				pushToolResult("Changes were rejected by the user.")
+				pushToolResult("此变更已被用户拒绝。")
 				await task.diffViewProvider.reset()
 				return
 			}
@@ -496,10 +559,10 @@ export class EditFileTool extends BaseTool<"edit_file"> {
 		let operationPreview: string | undefined
 		if (oldString !== undefined) {
 			if (oldString === "") {
-				operationPreview = "creating new file"
+				operationPreview = "正在创建新文件"
 			} else {
 				const preview = oldString.length > 50 ? oldString.substring(0, 50) + "..." : oldString
-				operationPreview = `replacing: "${preview}"`
+				operationPreview = `正在替换: "${preview}"`
 			}
 		}
 

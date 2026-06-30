@@ -105,7 +105,7 @@ export async function validateImageForProcessing(
 		return {
 			isValid: false,
 			reason: "unsupported_model",
-			notice: "Image file detected but current model does not support images. Skipping image processing.",
+			notice: "已检测到图片文件，但当前模型不支持图像。跳过图像处理。",
 		}
 	}
 
@@ -133,7 +133,7 @@ export async function validateImageForProcessing(
 		return {
 			isValid: false,
 			reason: "memory_limit",
-			notice: `Image skipped to avoid size limit (${maxTotalImageSize}MB). Current: ${currentMemoryFormatted} + this file: ${fileMemoryFormatted}. Try fewer or smaller images.`,
+			notice: `图片已跳过，防止触发大小限制 (${maxTotalImageSize}MB)。当前：${currentMemoryFormatted} + 这个文件：${fileMemoryFormatted}。请尝试更少或更小的图片。`,
 			sizeInMB: imageSizeInMB,
 		}
 	}
