@@ -273,6 +273,46 @@ export const globalSettingsSchema = z.object({
 	showWorktreesInHomeScreen: z.boolean().optional(),
 
 	/**
+	 * Whether to show the background image in the chat view.
+	 * @default true
+	 */
+	backgroundImageEnabled: z.boolean().optional(),
+
+	/**
+	 * URL for the chat background image. Supports https:// and relative paths.
+	 * When null/empty, a built-in default background image is used.
+	 */
+	backgroundImageUrl: z.string().nullish(),
+
+	/**
+	 * How the background image scales to fit within the chat area.
+	 * - "contain": fill height, width scales proportionally (may overflow horizontally)
+	 * - "cover": cover the entire chat area, may crop
+	 * - "auto": use the image's original dimensions
+	 * @default "contain"
+	 */
+	backgroundImageSize: z.enum(["contain", "cover", "auto"]).optional(),
+
+	/**
+	 * Horizontal alignment anchor for the background image.
+	 * @default "right"
+	 */
+	backgroundImagePosition: z.enum(["left", "center", "right"]).optional(),
+
+	/**
+	 * Horizontal offset as a percentage of the chat viewport width (-100 to 100).
+	 * Applied relative to the alignment position. Positive values shift right.
+	 * @default 0
+	 */
+	backgroundImageOffset: z.number().min(-100).max(100).optional(),
+
+	/**
+	 * Opacity of the background image overlay (0 = fully transparent, 1 = fully opaque).
+	 * @default 0.25
+	 */
+	backgroundImageOpacity: z.number().min(0).max(1).optional(),
+
+	/**
 	 * List of native tool names to globally disable.
 	 * Tools in this list will be excluded from prompt generation and rejected at execution time.
 	 */

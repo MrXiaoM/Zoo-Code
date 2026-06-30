@@ -1,6 +1,7 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useDeepCompareEffect, useEvent } from "react-use"
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso"
+import bgDefaultPng from "@src/assets/bg-default.png?url"
 import removeMd from "remove-markdown"
 import useSound from "use-sound"
 import { LRUCache } from "lru-cache"
@@ -90,7 +91,53 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		messageQueue = [],
 		showWorktreesInHomeScreen,
 		telemetrySetting,
+		backgroundImageEnabled = true,
+		backgroundImageUrl = null,
+		backgroundImageSize = "contain",
+		backgroundImagePosition = "right",
+		backgroundImageOffset = 0,
+		backgroundImageOpacity = 0.25,
 	} = useExtensionState()
+
+	// Compute background image style
+	const backgroundImageStyle = useMemo(() => {
+		if (!backgroundImageEnabled) {
+			return { display: "none" }
+		}
+
+		const bgUrl = backgroundImageUrl || bgDefaultPng
+
+		const sizeMap: Record<string, string> = {
+			contain: "auto 100%",
+			cover: "cover",
+			auto: "auto",
+		}
+
+		const anchorMap: Record<string, string> = {
+			left: "0%",
+			center: "50%",
+			right: "100%",
+		}
+
+		return {
+			position: "absolute" as const,
+			inset: 0,
+			zIndex: 0,
+			pointerEvents: "none" as const,
+			backgroundImage: `url(${bgUrl})`,
+			backgroundRepeat: "no-repeat" as const,
+			backgroundSize: sizeMap[backgroundImageSize] || "auto 100%",
+			backgroundPosition: `calc(${anchorMap[backgroundImagePosition] || "100%"} + ${backgroundImageOffset} * 1%) center`,
+			opacity: backgroundImageOpacity,
+		}
+	}, [
+		backgroundImageEnabled,
+		backgroundImageUrl,
+		backgroundImageSize,
+		backgroundImagePosition,
+		backgroundImageOffset,
+		backgroundImageOpacity,
+	])
 
 	// Show a WarningRow when the user sends a message with a retired provider.
 	const [showRetiredProviderWarning, setShowRetiredProviderWarning] = useState(false)
@@ -1606,246 +1653,266 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		<div
 			data-testid="chat-view"
 			className={isHidden ? "hidden" : "fixed top-0 left-0 right-0 bottom-0 flex flex-col overflow-hidden"}>
-			{telemetrySetting === "unset" && <TelemetryBanner />}
-			{(showAnnouncement || showAnnouncementModal) && (
-				<Announcement
-					hideAnnouncement={() => {
-						if (showAnnouncementModal) {
-							setShowAnnouncementModal(false)
+			{/* Background image layer */}
+			<div data-testid="chat-background-image" style={backgroundImageStyle as React.CSSProperties} />
+			{/* Content layer */}
+			<div className="relative z-10 flex flex-col flex-1 overflow-hidden">
+				{telemetrySetting === "unset" && <TelemetryBanner />}
+				{(showAnnouncement || showAnnouncementModal) && (
+					<Announcement
+						hideAnnouncement={() => {
+							if (showAnnouncementModal) {
+								setShowAnnouncementModal(false)
+							}
+							if (showAnnouncement) {
+								hideAnnouncement()
+							}
+						}}
+					/>
+				)}
+				{task ? (
+					<>
+						<TaskHeader
+							task={task}
+							tokensIn={apiMetrics.totalTokensIn}
+							tokensOut={apiMetrics.totalTokensOut}
+							cacheWrites={apiMetrics.totalCacheWrites}
+							cacheReads={apiMetrics.totalCacheReads}
+							totalCost={apiMetrics.totalCost}
+							aggregatedCost={
+								currentTaskItem?.id && aggregatedCostsMap.has(currentTaskItem.id)
+									? aggregatedCostsMap.get(currentTaskItem.id)!.totalCost
+									: undefined
+							}
+							hasSubtasks={
+								!!(
+									currentTaskItem?.id &&
+									aggregatedCostsMap.has(currentTaskItem.id) &&
+									aggregatedCostsMap.get(currentTaskItem.id)!.childrenCost > 0
+								)
+							}
+							parentTaskId={currentTaskItem?.parentTaskId}
+							costBreakdown={
+								currentTaskItem?.id && aggregatedCostsMap.has(currentTaskItem.id)
+									? getCostBreakdownIfNeeded(aggregatedCostsMap.get(currentTaskItem.id)!, {
+											own: t("common:costs.own"),
+											subtasks: t("common:costs.subtasks"),
+										})
+									: undefined
+							}
+							contextTokens={apiMetrics.contextTokens}
+							buttonsDisabled={sendingDisabled}
+							handleCondenseContext={handleCondenseContext}
+							todos={latestTodos}
+						/>
+
+						{checkpointWarning && (
+							<div className="px-3">
+								<CheckpointWarning warning={checkpointWarning} />
+							</div>
+						)}
+					</>
+				) : (
+					<div className="flex flex-col h-full p-6 min-h-0 overflow-y-auto gap-4 relative">
+						<div className="flex flex-col items-start gap-2 my-auto min-[400px]:px-6">
+							<VersionIndicator
+								onClick={() => setShowAnnouncementModal(true)}
+								className="absolute top-2 right-3 z-10"
+							/>
+							<div className="flex flex-col gap-4 w-full">
+								<RooHero />
+								<RooTips />
+								{/* Everyone should see their task history if any */}
+								{taskHistory.length > 0 && <HistoryPreview />}
+							</div>
+						</div>
+					</div>
+				)}
+
+				{!task && showWorktreesInHomeScreen && <WorktreeSelector />}
+
+				{task && (
+					<>
+						<div className="grow flex" ref={scrollContainerRef}>
+							<Virtuoso
+								ref={virtuosoRef}
+								key={task.ts}
+								className="scrollable grow overflow-y-scroll mb-1"
+								computeItemKey={computeMessageKey}
+								defaultItemHeight={CHAT_DEFAULT_ITEM_HEIGHT}
+								increaseViewportBy={CHAT_VIEWPORT_BUFFER}
+								data={groupedMessages}
+								itemContent={itemContent}
+								followOutput={followOutputCallback}
+								atBottomStateChange={atBottomStateChangeCallback}
+								atBottomThreshold={10}
+							/>
+						</div>
+						<FileChangesPanel clineMessages={messages} />
+						{areButtonsVisible && (
+							<div
+								className={`flex h-9 items-center mb-1 px-[15px] ${
+									showScrollToBottom ? "opacity-100" : enableButtons ? "opacity-100" : "opacity-50"
+								}`}>
+								{showScrollToBottom ? (
+									<>
+										<StandardTooltip content={t("chat:scrollToBottom")}>
+											<Button
+												variant="secondary"
+												className={hasLatestCheckpoint ? "flex-1 mr-[6px]" : "flex-[2]"}
+												onClick={handleScrollToBottomAndResetCheckpointCursor}>
+												<span className="codicon codicon-chevron-down"></span>
+											</Button>
+										</StandardTooltip>
+										{hasLatestCheckpoint && (
+											<StandardTooltip content={t("chat:scrollToLatestCheckpoint")}>
+												<Button
+													variant="secondary"
+													className="flex-1 ml-[6px]"
+													onClick={handleScrollToLatestCheckpoint}
+													aria-label={t("chat:scrollToLatestCheckpoint")}>
+													<span className="codicon codicon-history"></span>
+												</Button>
+											</StandardTooltip>
+										)}
+									</>
+								) : (
+									<>
+										{primaryButtonText && (
+											<StandardTooltip
+												content={
+													primaryButtonText === t("chat:retry.title")
+														? t("chat:retry.tooltip")
+														: primaryButtonText === t("chat:save.title")
+															? t("chat:save.tooltip")
+															: primaryButtonText === t("chat:approve.title")
+																? t("chat:approve.tooltip")
+																: primaryButtonText === t("chat:runCommand.title")
+																	? t("chat:runCommand.tooltip")
+																	: primaryButtonText === t("chat:startNewTask.title")
+																		? t("chat:startNewTask.tooltip")
+																		: primaryButtonText ===
+																			  t("chat:resumeTask.title")
+																			? t("chat:resumeTask.tooltip")
+																			: primaryButtonText ===
+																				  t("chat:proceedAnyways.title")
+																				? t("chat:proceedAnyways.tooltip")
+																				: primaryButtonText ===
+																					  t(
+																							"chat:proceedWhileRunning.title",
+																					  )
+																					? t(
+																							"chat:proceedWhileRunning.tooltip",
+																						)
+																					: undefined
+												}>
+												<Button
+													variant="primary"
+													disabled={!enableButtons}
+													className={
+														secondaryButtonText ? "flex-1 mr-[6px]" : "flex-[2] mr-0"
+													}
+													onClick={() =>
+														handlePrimaryButtonClick(inputValue, selectedImages)
+													}>
+													{primaryButtonText}
+												</Button>
+											</StandardTooltip>
+										)}
+										{secondaryButtonText && (
+											<StandardTooltip
+												content={
+													secondaryButtonText === t("chat:startNewTask.title")
+														? t("chat:startNewTask.tooltip")
+														: secondaryButtonText === t("chat:reject.title")
+															? t("chat:reject.tooltip")
+															: secondaryButtonText === t("chat:terminate.title")
+																? t("chat:terminate.tooltip")
+																: secondaryButtonText === t("chat:killCommand.title")
+																	? t("chat:killCommand.tooltip")
+																	: undefined
+												}>
+												<Button
+													variant="secondary"
+													disabled={!enableButtons}
+													className="flex-1 ml-[6px]"
+													onClick={() =>
+														handleSecondaryButtonClick(inputValue, selectedImages)
+													}>
+													{secondaryButtonText}
+												</Button>
+											</StandardTooltip>
+										)}
+									</>
+								)}
+							</div>
+						)}
+					</>
+				)}
+
+				<QueuedMessages
+					queue={messageQueue}
+					onRemove={(index) => {
+						if (messageQueue[index]) {
+							vscode.postMessage({ type: "removeQueuedMessage", text: messageQueue[index].id })
 						}
-						if (showAnnouncement) {
-							hideAnnouncement()
+					}}
+					onUpdate={(index, newText) => {
+						if (messageQueue[index]) {
+							vscode.postMessage({
+								type: "editQueuedMessage",
+								payload: {
+									id: messageQueue[index].id,
+									text: newText,
+									images: messageQueue[index].images,
+								},
+							})
 						}
 					}}
 				/>
-			)}
-			{task ? (
-				<>
-					<TaskHeader
-						task={task}
-						tokensIn={apiMetrics.totalTokensIn}
-						tokensOut={apiMetrics.totalTokensOut}
-						cacheWrites={apiMetrics.totalCacheWrites}
-						cacheReads={apiMetrics.totalCacheReads}
-						totalCost={apiMetrics.totalCost}
-						aggregatedCost={
-							currentTaskItem?.id && aggregatedCostsMap.has(currentTaskItem.id)
-								? aggregatedCostsMap.get(currentTaskItem.id)!.totalCost
-								: undefined
-						}
-						hasSubtasks={
-							!!(
-								currentTaskItem?.id &&
-								aggregatedCostsMap.has(currentTaskItem.id) &&
-								aggregatedCostsMap.get(currentTaskItem.id)!.childrenCost > 0
-							)
-						}
-						parentTaskId={currentTaskItem?.parentTaskId}
-						costBreakdown={
-							currentTaskItem?.id && aggregatedCostsMap.has(currentTaskItem.id)
-								? getCostBreakdownIfNeeded(aggregatedCostsMap.get(currentTaskItem.id)!, {
-										own: t("common:costs.own"),
-										subtasks: t("common:costs.subtasks"),
-									})
-								: undefined
-						}
-						contextTokens={apiMetrics.contextTokens}
-						buttonsDisabled={sendingDisabled}
-						handleCondenseContext={handleCondenseContext}
-						todos={latestTodos}
-					/>
-
-					{checkpointWarning && (
-						<div className="px-3">
-							<CheckpointWarning warning={checkpointWarning} />
-						</div>
-					)}
-				</>
-			) : (
-				<div className="flex flex-col h-full p-6 min-h-0 overflow-y-auto gap-4 relative">
-					<div className="flex flex-col items-start gap-2 my-auto min-[400px]:px-6">
-						<VersionIndicator
-							onClick={() => setShowAnnouncementModal(true)}
-							className="absolute top-2 right-3 z-10"
-						/>
-						<div className="flex flex-col gap-4 w-full">
-							<RooHero />
-							<RooTips />
-							{/* Everyone should see their task history if any */}
-							{taskHistory.length > 0 && <HistoryPreview />}
-						</div>
-					</div>
-				</div>
-			)}
-
-			{!task && showWorktreesInHomeScreen && <WorktreeSelector />}
-
-			{task && (
-				<>
-					<div className="grow flex" ref={scrollContainerRef}>
-						<Virtuoso
-							ref={virtuosoRef}
-							key={task.ts}
-							className="scrollable grow overflow-y-scroll mb-1"
-							computeItemKey={computeMessageKey}
-							defaultItemHeight={CHAT_DEFAULT_ITEM_HEIGHT}
-							increaseViewportBy={CHAT_VIEWPORT_BUFFER}
-							data={groupedMessages}
-							itemContent={itemContent}
-							followOutput={followOutputCallback}
-							atBottomStateChange={atBottomStateChangeCallback}
-							atBottomThreshold={10}
+				{showRetiredProviderWarning && (
+					<div className="px-[15px] py-1">
+						<WarningRow
+							title={t("chat:retiredProvider.title")}
+							message={t("chat:retiredProvider.message")}
+							actionText={t("chat:retiredProvider.openSettings")}
+							onAction={() => vscode.postMessage({ type: "switchTab", tab: "settings" })}
 						/>
 					</div>
-					<FileChangesPanel clineMessages={messages} />
-					{areButtonsVisible && (
-						<div
-							className={`flex h-9 items-center mb-1 px-[15px] ${
-								showScrollToBottom ? "opacity-100" : enableButtons ? "opacity-100" : "opacity-50"
-							}`}>
-							{showScrollToBottom ? (
-								<>
-									<StandardTooltip content={t("chat:scrollToBottom")}>
-										<Button
-											variant="secondary"
-											className={hasLatestCheckpoint ? "flex-1 mr-[6px]" : "flex-[2]"}
-											onClick={handleScrollToBottomAndResetCheckpointCursor}>
-											<span className="codicon codicon-chevron-down"></span>
-										</Button>
-									</StandardTooltip>
-									{hasLatestCheckpoint && (
-										<StandardTooltip content={t("chat:scrollToLatestCheckpoint")}>
-											<Button
-												variant="secondary"
-												className="flex-1 ml-[6px]"
-												onClick={handleScrollToLatestCheckpoint}
-												aria-label={t("chat:scrollToLatestCheckpoint")}>
-												<span className="codicon codicon-history"></span>
-											</Button>
-										</StandardTooltip>
-									)}
-								</>
-							) : (
-								<>
-									{primaryButtonText && (
-										<StandardTooltip
-											content={
-												primaryButtonText === t("chat:retry.title")
-													? t("chat:retry.tooltip")
-													: primaryButtonText === t("chat:save.title")
-														? t("chat:save.tooltip")
-														: primaryButtonText === t("chat:approve.title")
-															? t("chat:approve.tooltip")
-															: primaryButtonText === t("chat:runCommand.title")
-																? t("chat:runCommand.tooltip")
-																: primaryButtonText === t("chat:startNewTask.title")
-																	? t("chat:startNewTask.tooltip")
-																	: primaryButtonText === t("chat:resumeTask.title")
-																		? t("chat:resumeTask.tooltip")
-																		: primaryButtonText ===
-																			  t("chat:proceedAnyways.title")
-																			? t("chat:proceedAnyways.tooltip")
-																			: primaryButtonText ===
-																				  t("chat:proceedWhileRunning.title")
-																				? t("chat:proceedWhileRunning.tooltip")
-																				: undefined
-											}>
-											<Button
-												variant="primary"
-												disabled={!enableButtons}
-												className={secondaryButtonText ? "flex-1 mr-[6px]" : "flex-[2] mr-0"}
-												onClick={() => handlePrimaryButtonClick(inputValue, selectedImages)}>
-												{primaryButtonText}
-											</Button>
-										</StandardTooltip>
-									)}
-									{secondaryButtonText && (
-										<StandardTooltip
-											content={
-												secondaryButtonText === t("chat:startNewTask.title")
-													? t("chat:startNewTask.tooltip")
-													: secondaryButtonText === t("chat:reject.title")
-														? t("chat:reject.tooltip")
-														: secondaryButtonText === t("chat:terminate.title")
-															? t("chat:terminate.tooltip")
-															: secondaryButtonText === t("chat:killCommand.title")
-																? t("chat:killCommand.tooltip")
-																: undefined
-											}>
-											<Button
-												variant="secondary"
-												disabled={!enableButtons}
-												className="flex-1 ml-[6px]"
-												onClick={() => handleSecondaryButtonClick(inputValue, selectedImages)}>
-												{secondaryButtonText}
-											</Button>
-										</StandardTooltip>
-									)}
-								</>
-							)}
-						</div>
-					)}
-				</>
-			)}
+				)}
+				<ChatTextArea
+					ref={textAreaRef}
+					inputValue={inputValue}
+					setInputValue={setInputValue}
+					sendingDisabled={sendingDisabled || isProfileDisabled}
+					selectApiConfigDisabled={sendingDisabled && clineAsk !== "api_req_failed"}
+					placeholderText={placeholderText}
+					selectedImages={selectedImages}
+					setSelectedImages={setSelectedImages}
+					onSend={() => handleSendMessage(inputValue, selectedImages)}
+					onSelectImages={selectImages}
+					shouldDisableImages={shouldDisableImages}
+					onHeightChange={() => {
+						if (isAtBottomRef.current && scrollPhaseRef.current !== "USER_BROWSING_HISTORY") {
+							scrollToBottomAuto()
+						}
+					}}
+					mode={mode}
+					setMode={setMode}
+					modeShortcutText={modeShortcutText}
+					isStreaming={isStreaming}
+					onStop={handleStopTask}
+					onEnqueueMessage={handleEnqueueCurrentMessage}
+				/>
 
-			<QueuedMessages
-				queue={messageQueue}
-				onRemove={(index) => {
-					if (messageQueue[index]) {
-						vscode.postMessage({ type: "removeQueuedMessage", text: messageQueue[index].id })
-					}
-				}}
-				onUpdate={(index, newText) => {
-					if (messageQueue[index]) {
-						vscode.postMessage({
-							type: "editQueuedMessage",
-							payload: { id: messageQueue[index].id, text: newText, images: messageQueue[index].images },
-						})
-					}
-				}}
-			/>
-			{showRetiredProviderWarning && (
-				<div className="px-[15px] py-1">
-					<WarningRow
-						title={t("chat:retiredProvider.title")}
-						message={t("chat:retiredProvider.message")}
-						actionText={t("chat:retiredProvider.openSettings")}
-						onAction={() => vscode.postMessage({ type: "switchTab", tab: "settings" })}
-					/>
-				</div>
-			)}
-			<ChatTextArea
-				ref={textAreaRef}
-				inputValue={inputValue}
-				setInputValue={setInputValue}
-				sendingDisabled={sendingDisabled || isProfileDisabled}
-				selectApiConfigDisabled={sendingDisabled && clineAsk !== "api_req_failed"}
-				placeholderText={placeholderText}
-				selectedImages={selectedImages}
-				setSelectedImages={setSelectedImages}
-				onSend={() => handleSendMessage(inputValue, selectedImages)}
-				onSelectImages={selectImages}
-				shouldDisableImages={shouldDisableImages}
-				onHeightChange={() => {
-					if (isAtBottomRef.current && scrollPhaseRef.current !== "USER_BROWSING_HISTORY") {
-						scrollToBottomAuto()
-					}
-				}}
-				mode={mode}
-				setMode={setMode}
-				modeShortcutText={modeShortcutText}
-				isStreaming={isStreaming}
-				onStop={handleStopTask}
-				onEnqueueMessage={handleEnqueueCurrentMessage}
-			/>
+				{isProfileDisabled && (
+					<div className="px-3">
+						<ProfileViolationWarning />
+					</div>
+				)}
 
-			{isProfileDisabled && (
-				<div className="px-3">
-					<ProfileViolationWarning />
-				</div>
-			)}
-
-			<div id="roo-portal" />
+				<div id="roo-portal" />
+			</div>
 		</div>
 	)
 }

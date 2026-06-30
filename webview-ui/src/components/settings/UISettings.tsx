@@ -1,6 +1,6 @@
 import { HTMLAttributes, useMemo } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
-import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox, VSCodeDropdown, VSCodeOption, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import { telemetryClient } from "@/utils/TelemetryClient"
 import {
 	DEFAULT_AUTO_CLOSE_ZOO_OPENED_FILES,
@@ -26,6 +26,12 @@ interface UISettingsProps extends HTMLAttributes<HTMLDivElement> {
 	autoCloseZooOpenedFiles?: boolean
 	autoCloseZooOpenedFilesAfterUserEdited?: boolean
 	autoCloseZooOpenedNewFiles?: boolean
+	backgroundImageEnabled?: boolean
+	backgroundImageUrl?: string | null
+	backgroundImageSize?: "contain" | "cover" | "auto"
+	backgroundImagePosition?: "left" | "center" | "right"
+	backgroundImageOffset?: number
+	backgroundImageOpacity?: number
 	setCachedStateField: SetCachedStateField<keyof ExtensionStateContextType>
 }
 
@@ -36,6 +42,12 @@ export const UISettings = ({
 	autoCloseZooOpenedFiles,
 	autoCloseZooOpenedFilesAfterUserEdited,
 	autoCloseZooOpenedNewFiles,
+	backgroundImageEnabled = true,
+	backgroundImageUrl = null,
+	backgroundImageSize = "contain",
+	backgroundImagePosition = "right",
+	backgroundImageOffset = 0,
+	backgroundImageOpacity = 0.25,
 	setCachedStateField,
 	...props
 }: UISettingsProps) => {
@@ -80,6 +92,36 @@ export const UISettings = ({
 
 		// Track telemetry event
 		telemetryClient.capture("ui_settings_chat_font_size_reset")
+	}
+
+	const handleBackgroundImageEnabledChange = (value: boolean) => {
+		setCachedStateField("backgroundImageEnabled", value)
+		telemetryClient.capture("ui_settings_background_image_enabled_changed", { enabled: value })
+	}
+
+	const handleBackgroundImageUrlChange = (value: string) => {
+		setCachedStateField("backgroundImageUrl", value || null)
+		telemetryClient.capture("ui_settings_background_image_url_changed")
+	}
+
+	const handleBackgroundImageSizeChange = (value: string) => {
+		setCachedStateField("backgroundImageSize", value as "contain" | "cover" | "auto")
+		telemetryClient.capture("ui_settings_background_image_size_changed", { size: value })
+	}
+
+	const handleBackgroundImagePositionChange = (value: string) => {
+		setCachedStateField("backgroundImagePosition", value as "left" | "center" | "right")
+		telemetryClient.capture("ui_settings_background_image_position_changed", { position: value })
+	}
+
+	const handleBackgroundImageOffsetChange = (value: number) => {
+		setCachedStateField("backgroundImageOffset", value)
+		telemetryClient.capture("ui_settings_background_image_offset_changed", { offset: value })
+	}
+
+	const handleBackgroundImageOpacityChange = (value: number) => {
+		setCachedStateField("backgroundImageOpacity", value)
+		telemetryClient.capture("ui_settings_background_image_opacity_changed", { opacity: value })
 	}
 
 	return (
@@ -217,6 +259,157 @@ export const UISettings = ({
 							</VSCodeCheckbox>
 							<div className="text-vscode-descriptionForeground text-sm ml-5 mt-1">
 								{t("settings:ui.autoCloseZooOpenedNewFiles.description")}
+							</div>
+						</div>
+					</SearchableSetting>
+
+					{/* --- Background Image Settings --- */}
+					<SectionHeader className="mt-4">{t("settings:ui.backgroundImage.sectionTitle")}</SectionHeader>
+
+					<SearchableSetting
+						settingId="ui-background-image-enabled"
+						section="ui"
+						label={t("settings:ui.backgroundImage.enabled.label")}>
+						<div className="flex flex-col gap-1">
+							<VSCodeCheckbox
+								checked={backgroundImageEnabled}
+								onChange={(e: any) => handleBackgroundImageEnabledChange(e.target.checked)}
+								data-testid="background-image-enabled-checkbox">
+								<span className="font-medium">{t("settings:ui.backgroundImage.enabled.label")}</span>
+							</VSCodeCheckbox>
+							<div className="text-vscode-descriptionForeground text-sm ml-5 mt-1">
+								{t("settings:ui.backgroundImage.enabled.description")}
+							</div>
+						</div>
+					</SearchableSetting>
+
+					<SearchableSetting
+						settingId="ui-background-image-url"
+						section="ui"
+						label={t("settings:ui.backgroundImage.url.label")}>
+						<div className="flex flex-col gap-1">
+							<label className="block font-medium mb-1">
+								{t("settings:ui.backgroundImage.url.label")}
+							</label>
+							<VSCodeTextField
+								value={backgroundImageUrl ?? ""}
+								onInput={(e: any) => handleBackgroundImageUrlChange(e.target.value)}
+								placeholder={t("settings:ui.backgroundImage.url.placeholder")}
+								data-testid="background-image-url-input"
+								disabled={!backgroundImageEnabled}
+								className="w-full"></VSCodeTextField>
+							<div className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:ui.backgroundImage.url.description")}
+							</div>
+						</div>
+					</SearchableSetting>
+
+					<SearchableSetting
+						settingId="ui-background-image-size"
+						section="ui"
+						label={t("settings:ui.backgroundImage.size.label")}>
+						<div className="flex flex-col gap-1">
+							<label className="block font-medium mb-1">
+								{t("settings:ui.backgroundImage.size.label")}
+							</label>
+							<VSCodeDropdown
+								value={backgroundImageSize}
+								onChange={(e: any) => handleBackgroundImageSizeChange(e.target.value)}
+								data-testid="background-image-size-dropdown"
+								disabled={!backgroundImageEnabled}>
+								<VSCodeOption value="contain">
+									{t("settings:ui.backgroundImage.size.options.contain")}
+								</VSCodeOption>
+								<VSCodeOption value="cover">
+									{t("settings:ui.backgroundImage.size.options.cover")}
+								</VSCodeOption>
+								<VSCodeOption value="auto">
+									{t("settings:ui.backgroundImage.size.options.auto")}
+								</VSCodeOption>
+							</VSCodeDropdown>
+							<div className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:ui.backgroundImage.size.description")}
+							</div>
+						</div>
+					</SearchableSetting>
+
+					<SearchableSetting
+						settingId="ui-background-image-position"
+						section="ui"
+						label={t("settings:ui.backgroundImage.position.label")}>
+						<div className="flex flex-col gap-1">
+							<label className="block font-medium mb-1">
+								{t("settings:ui.backgroundImage.position.label")}
+							</label>
+							<VSCodeDropdown
+								value={backgroundImagePosition}
+								onChange={(e: any) => handleBackgroundImagePositionChange(e.target.value)}
+								data-testid="background-image-position-dropdown"
+								disabled={!backgroundImageEnabled}>
+								<VSCodeOption value="left">
+									{t("settings:ui.backgroundImage.position.options.left")}
+								</VSCodeOption>
+								<VSCodeOption value="center">
+									{t("settings:ui.backgroundImage.position.options.center")}
+								</VSCodeOption>
+								<VSCodeOption value="right">
+									{t("settings:ui.backgroundImage.position.options.right")}
+								</VSCodeOption>
+							</VSCodeDropdown>
+							<div className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:ui.backgroundImage.position.description")}
+							</div>
+						</div>
+					</SearchableSetting>
+
+					<SearchableSetting
+						settingId="ui-background-image-offset"
+						section="ui"
+						label={t("settings:ui.backgroundImage.offset.label")}>
+						<div className="flex flex-col gap-1">
+							<label className="block font-medium mb-1">
+								{t("settings:ui.backgroundImage.offset.label")}
+							</label>
+							<div className="flex items-center gap-2">
+								<Slider
+									min={-100}
+									max={100}
+									step={1}
+									value={[backgroundImageOffset]}
+									onValueChange={([value]) => handleBackgroundImageOffsetChange(value)}
+									data-testid="background-image-offset-slider"
+									disabled={!backgroundImageEnabled}
+								/>
+								<span className="w-14 text-right">{backgroundImageOffset}%</span>
+							</div>
+							<div className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:ui.backgroundImage.offset.description")}
+							</div>
+						</div>
+					</SearchableSetting>
+
+					<SearchableSetting
+						settingId="ui-background-image-opacity"
+						section="ui"
+						label={t("settings:ui.backgroundImage.opacity.label")}>
+						<div className="flex flex-col gap-1">
+							<label className="block font-medium mb-1">
+								{t("settings:ui.backgroundImage.opacity.label")}
+							</label>
+							<div className="flex items-center gap-2">
+								<Slider
+									min={0}
+									max={1}
+									step={0.05}
+									value={[backgroundImageOpacity]}
+									onValueChange={([value]) => handleBackgroundImageOpacityChange(value)}
+									data-testid="background-image-opacity-slider"
+									disabled={!backgroundImageEnabled}
+								/>
+								<span className="w-12 text-right">{backgroundImageOpacity.toFixed(2)}</span>
+							</div>
+							<div className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:ui.backgroundImage.opacity.description")}
 							</div>
 						</div>
 					</SearchableSetting>

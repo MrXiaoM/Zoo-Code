@@ -322,6 +322,12 @@ export type ExtensionState = Pick<
 	| "requestDelaySeconds"
 	| "showWorktreesInHomeScreen"
 	| "disabledTools"
+	| "backgroundImageEnabled"
+	| "backgroundImageUrl"
+	| "backgroundImageSize"
+	| "backgroundImagePosition"
+	| "backgroundImageOffset"
+	| "backgroundImageOpacity"
 > & {
 	lockApiConfigAcrossModes?: boolean
 	version: string

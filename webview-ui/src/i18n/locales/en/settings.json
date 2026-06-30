@@ -242,6 +242,44 @@
 		"autoCloseZooOpenedNewFiles": {
 			"label": "Auto-close newly created files",
 			"description": "When enabled, tabs for files that Zoo created (rather than modified) will also be closed automatically after the edit is accepted."
+		},
+		"backgroundImage": {
+			"sectionTitle": "Background Image",
+			"enabled": {
+				"label": "Show background image",
+				"description": "Display a decorative background image in the chat area"
+			},
+			"url": {
+				"label": "Image URL",
+				"description": "URL for the background image. Supports https:// and relative paths. Leave empty to use the built-in default image.",
+				"placeholder": "Enter image URL or path..."
+			},
+			"size": {
+				"label": "Scaling",
+				"description": "How the background image scales to fit the area",
+				"options": {
+					"contain": "Fit by height",
+					"cover": "Fill area",
+					"auto": "Original size"
+				}
+			},
+			"position": {
+				"label": "Alignment",
+				"description": "Horizontal alignment of the background image",
+				"options": {
+					"left": "Left",
+					"center": "Center",
+					"right": "Right"
+				}
+			},
+			"offset": {
+				"label": "Horizontal offset",
+				"description": "Horizontal offset (as percentage of viewport width) to fine-tune the image position"
+			},
+			"opacity": {
+				"label": "Opacity",
+				"description": "Opacity of the background image. 0 is fully transparent, 1 is fully opaque."
+			}
 		}
 	},
 	"prompts": {

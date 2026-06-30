@@ -138,11 +138,14 @@ ${await addCustomInstructions(baseInstructions, globalCustomInstructions || "", 
 	settings,
 })}`
 
-	// Replace {{agentName}} placeholder with the configured agent name, falling back to the built-in default "Mirai".
-	const withAgentName = basePrompt.replace(/\{\{agentName\}\}/g, agentName || "Mirai")
+	// Falling back to the built-in default "Mirai".
+	const finAgentName = agentName || "Mirai"
 
 	// Replace {{defaultRole}} placeholder with the AGENT_ROLE constant.
-	const resolvedPrompt = withAgentName.replace(/\{\{defaultRole\}\}/g, AGENT_ROLE)
+	const withAgentRole = basePrompt.replaceAll("{{defaultRole}}", AGENT_ROLE)
+
+	// Replace {{agentName}} placeholder with the configured agent name.
+	const resolvedPrompt = withAgentRole.replaceAll("{{agentName}}", finAgentName)
 
 	return resolvedPrompt
 }

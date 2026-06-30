@@ -216,6 +216,12 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		autoCloseZooOpenedFilesAfterUserEdited,
 		autoCloseZooOpenedNewFiles,
 		agentName,
+		backgroundImageEnabled,
+		backgroundImageUrl,
+		backgroundImageSize,
+		backgroundImagePosition,
+		backgroundImageOffset,
+		backgroundImageOpacity,
 	} = cachedState
 
 	const apiConfiguration = useMemo(() => cachedState.apiConfiguration ?? {}, [cachedState.apiConfiguration])
@@ -926,6 +932,12 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								autoCloseZooOpenedFiles={autoCloseZooOpenedFiles}
 								autoCloseZooOpenedFilesAfterUserEdited={autoCloseZooOpenedFilesAfterUserEdited}
 								autoCloseZooOpenedNewFiles={autoCloseZooOpenedNewFiles}
+								backgroundImageEnabled={backgroundImageEnabled}
+								backgroundImageUrl={backgroundImageUrl}
+								backgroundImageSize={backgroundImageSize}
+								backgroundImagePosition={backgroundImagePosition}
+								backgroundImageOffset={backgroundImageOffset}
+								backgroundImageOpacity={backgroundImageOpacity}
 								setCachedStateField={setCachedStateField}
 							/>
 						)}

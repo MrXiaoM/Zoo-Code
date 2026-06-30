@@ -1086,6 +1086,44 @@
 		"autoCloseZooOpenedNewFiles": {
 			"label": "自动关闭新建的文件",
 			"description": "启用后，Zoo 新建（而非修改）的文件标签页在接受更改后也会自动关闭。"
+		},
+		"backgroundImage": {
+			"sectionTitle": "背景图",
+			"enabled": {
+				"label": "显示背景图",
+				"description": "在对话区域显示背景装饰图"
+			},
+			"url": {
+				"label": "图片地址",
+				"description": "背景图 URL。支持 https:// 和相对路径。留空则使用内置默认背景图。",
+				"placeholder": "输入图片 URL 或路径..."
+			},
+			"size": {
+				"label": "缩放方式",
+				"description": "背景图的缩放适配方式",
+				"options": {
+					"contain": "按高度适配",
+					"cover": "填满区域",
+					"auto": "原始尺寸"
+				}
+			},
+			"position": {
+				"label": "对齐方向",
+				"description": "背景图的水平对齐方向",
+				"options": {
+					"left": "居左",
+					"center": "居中",
+					"right": "居右"
+				}
+			},
+			"offset": {
+				"label": "水平偏移",
+				"description": "水平偏移量（相对于界面宽度的百分比），用于微调背景图位置"
+			},
+			"opacity": {
+				"label": "不透明度",
+				"description": "背景图的不透明度。0 为完全透明，1 为完全不透明。"
+			}
 		}
 	},
 	"skills": {
