@@ -524,7 +524,6 @@ export async function executeCommandInTerminal(
 				status: "started",
 				pid,
 				command,
-				terminalInfo: terminalInfoForStatus,
 			}
 			provider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 		},

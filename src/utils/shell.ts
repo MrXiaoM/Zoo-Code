@@ -3,6 +3,8 @@ import { existsSync } from "fs"
 import { userInfo } from "os"
 import * as path from "path"
 
+import { BaseTerminal } from "../integrations/terminal/BaseTerminal"
+
 // Security: Allowlist of approved shell executables to prevent arbitrary command execution
 const SHELL_ALLOWLIST = new Set<string>([
 	// Windows PowerShell variants
@@ -396,40 +398,80 @@ export function getShellContext(shellPath: string = getShell()): ShellContext {
 }
 
 // -----------------------------------------------------
-// 6) Publicly Exposed Shell Getter
+// 6) Zoo Code Terminal Profile Helper
+// -----------------------------------------------------
+
+/**
+ * Resolves Zoo Code's own terminal profile setting to a shell path.
+ *
+ * When the user picks a specific shell profile in Zoo Code settings
+ * (e.g. "Git Bash"), this reads VS Code's `terminal.integrated.profiles`
+ * to resolve the profile name to an actual shell binary path.
+ *
+ * @returns The resolved shell path, or null when no Zoo Code profile is set
+ *   or the profile cannot be resolved.
+ */
+function getShellFromZooCodeProfile(): string | null {
+	try {
+		const profileName = BaseTerminal.getTerminalProfile()
+		if (!profileName) return null
+
+		const platformKey = process.platform === "win32" ? "windows" : process.platform === "darwin" ? "osx" : "linux"
+		const config = vscode.workspace.getConfiguration("terminal.integrated")
+		const profiles = config.get<Record<string, { path?: string | string[] }>>(`profiles.${platformKey}`)
+		if (!profiles) return null
+
+		const profile = profiles[profileName]
+		if (!profile?.path) return null
+
+		if (Array.isArray(profile.path)) {
+			return profile.path.length > 0 ? profile.path[0] : null
+		}
+		return profile.path
+	} catch {
+		return null
+	}
+}
+
+// -----------------------------------------------------
+// 7) Publicly Exposed Shell Getter
 // -----------------------------------------------------
 
 export function getShell(): string {
 	let shell: string | null = null
 
-	// 1. Check VS Code config first.
-	if (process.platform === "win32") {
-		// Special logic for Windows
-		shell = getWindowsShellFromVSCode()
-	} else if (process.platform === "darwin") {
-		// macOS from VS Code
-		shell = getMacShellFromVSCode()
-	} else if (process.platform === "linux") {
-		// Linux from VS Code
-		shell = getLinuxShellFromVSCode()
+	// 1. Check Zoo Code's own terminal profile setting first — this is what
+	//    the user explicitly picked in Zoo Code's settings UI and takes
+	//    precedence over VS Code's terminal.integrated.defaultProfile.
+	shell = getShellFromZooCodeProfile()
+
+	// 2. If no Zoo Code profile, fall back to VS Code config.
+	if (!shell) {
+		if (process.platform === "win32") {
+			shell = getWindowsShellFromVSCode()
+		} else if (process.platform === "darwin") {
+			shell = getMacShellFromVSCode()
+		} else if (process.platform === "linux") {
+			shell = getLinuxShellFromVSCode()
+		}
 	}
 
-	// 2. If no shell from VS Code, try userInfo()
+	// 3. If no shell from VS Code, try userInfo()
 	if (!shell) {
 		shell = getShellFromUserInfo()
 	}
 
-	// 3. If still nothing, try environment variable
+	// 4. If still nothing, try environment variable
 	if (!shell) {
 		shell = getShellFromEnv()
 	}
 
-	// 4. Finally, fall back to a default
+	// 5. Finally, fall back to a default
 	if (!shell) {
 		shell = getSafeFallbackShell()
 	}
 
-	// 5. Validate the shell against allowlist
+	// 6. Validate the shell against allowlist
 	if (!isShellAllowed(shell)) {
 		shell = getSafeFallbackShell()
 	}
